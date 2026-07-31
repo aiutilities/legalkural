@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+  "primary_issue": {
+    "id": "I001",
+    "title": "Residential vs Commercial Classification",
+    "question": "Whether hostels occupied by working men and women should be classified as residential premises or commercial premises for municipal taxation, water charges and allied levies.",
+    "court_answer": "Residential"
+  },
+  "secondary_issues": [
+    {
+      "id": "I002",
+      "title": "Maintainability",
+      "question": "Whether writ petitions are maintainable despite the availability of an alternate statutory appeal.",
+      "court_answer": "Yes"
+    },
+    {
+      "id": "I003",
+      "title": "Natural Justice",
+      "question": "Whether tariff conversion without prior notice violates principles of natural justice.",
+      "court_answer": "Yes"
+    },
+    {
+      "id": "I004",
+      "title": "Recipient Perspective",
+      "question": "Should the nature of the premises be determined from the owner's business or the occupant's use?",
+      "court_answer": "Occupant's use"
+    },
+    {
+      "id": "I005",
+      "title": "Beneficial Interpretation",
+      "question": "Whether exemption provisions should receive purposive and beneficial interpretation.",
+      "court_answer": "Yes"
+    }
+  ],
+  "thinkingos_summary": {
+    "attention": "Wrong classification of hostel properties.",
+    "observation": "Residents use hostels exactly like homes.",
+    "understanding": "Actual usage outweighs business ownership.",
+    "reasoning": "Law protects substance over form.",
+    "communication": "If people live there, the law should evaluate the premises as a residence unless legislation clearly requires otherwise."
+  },
+  "status": "VERIFIED"
+}
