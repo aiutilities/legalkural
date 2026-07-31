@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(
+  cd "$(dirname "${BASH_SOURCE[0]}")/.." &&
+  pwd
+)"
+
+cd "$ROOT"
+
+PYTHON="$ROOT/.venv/bin/python"
+
+test -x "$PYTHON" || {
+  echo "ERROR: Virtual environment missing."
+  echo "Run: ./bin/bootstrap"
+  exit 1
+}
+
+exec env PYTHONPATH=engine "$PYTHON" -m aidpl.law_worker "$@"
