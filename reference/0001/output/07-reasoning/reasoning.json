@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+  "reasoning_model": {
+    "type": "Functional-use and rights-based judicial reasoning",
+    "sequence": [
+      "Identify the actual activity carried out inside the premises",
+      "Separate the owner's commercial business from the occupant's residential use",
+      "Apply statutory definitions of residence",
+      "Compare hostel rooms with rented residential apartments",
+      "Evaluate the economic burden on hostel residents",
+      "Test whether prior notice and hearing were provided",
+      "Apply the earlier hostel GST precedent",
+      "Grant relief while limiting automatic application to factually similar hostels"
+    ]
+  },
+  "issue_reasoning": [
+    {
+      "issue_id": "I001",
+      "issue": "Whether hostel premises should receive residential or commercial tariff treatment",
+      "court_reasoning": [
+        {
+          "step": 1,
+          "proposition": "The classification must depend on the nature of activities conducted inside the premises.",
+          "basis": "A property used for business activity may attract commercial tariff, while premises used for sleeping and ordinary living remain residential.",
+          "source_pages": [23, 24]
+        },
+        {
+          "step": 2,
+          "proposition": "The owner's receipt of rent does not determine the tariff classification.",
+          "basis": "An apartment owner may receive rental or business income while the rented flat continues to be residential when the tenant lives there.",
+          "source_pages": [22, 24, 25]
+        },
+        {
+          "step": 3,
+          "proposition": "Hostel inmates used the rooms as sleeping apartments and for ordinary residential activities.",
+          "basis": "The occupants slept, ate, bathed, washed clothes and used common kitchens and dining areas.",
+          "source_pages": [16, 22, 25, 26]
+        },
+        {
+          "step": 4,
+          "proposition": "Hostel residents and residential apartment tenants perform materially similar activities.",
+          "basis": "The Court rejected the use of different tariff standards where the nature of occupation was the same.",
+          "source_pages": [25, 26]
+        },
+        {
+          "step": 5,
+          "proposition": "The statutory definitions support residential classification.",
+          "basis": "The municipal statutes define residence by reference to use of premises or part of premises as a sleeping apartment.",
+          "source_pages": [28, 29, 30]
+        },
+        {
+          "step": 6,
+          "proposition": "The expression private hostel in commercial-premises regulations is not decisive by label alone.",
+          "basis": "The Court read the regulation according to actual use and treated hostels used for residential activity as domestic residential premises.",
+          "source_pages": [31, 32]
+        },
+        {
+          "step": 7,
+          "proposition": "Commercial tariff would disproportionately burden economically weaker occupants.",
+          "basis": "Higher property, water and electricity charges would ultimately be passed to residents who shared rooms to reduce living costs.",
+          "source_pages": [23, 26, 27, 33, 34]
+        },
+        {
+          "step": 8,
+          "proposition": "The earlier GST decision supported the recipient-use approach.",
+          "basis": "The Court had previously held that hostel rooms used as sleeping accommodation should be viewed as residential from the service recipient's perspective.",
+          "source_pages": [36, 37, 52]
+        }
+      ],
+      "conclusion": "The activities conducted by the inmates were residential, and the hostel properties in these cases could not be subjected to commercial tariffs."
+    },
+    {
+      "issue_id": "I002",
+      "issue": "Whether the writ petitions were maintainable despite the statutory appeal",
+      "court_reasoning": [
+        {
+          "step": 1,
+          "proposition": "The dispute involved statutory interpretation and not merely factual reassessment.",
+          "basis": "The Court had to determine the meaning of residence and the correct legal test for tariff classification.",
+          "source_pages": [34, 35]
+        },
+        {
+          "step": 2,
+          "proposition": "A natural-justice violation was specifically alleged and established.",
+          "basis": "The respondents produced no documentary evidence proving prior communication or opportunity before reclassification.",
+          "source_pages": [35]
+        },
+        {
+          "step": 3,
+          "proposition": "An alternative remedy does not create an absolute bar in such circumstances.",
+          "basis": "Article 226 jurisdiction remained available for legal issues and violations of natural justice.",
+          "source_pages": [35, 36]
+        }
+      ],
+      "conclusion": "The High Court could entertain the writ petitions notwithstanding the appeal available under Section 100."
+    },
+    {
+      "issue_id": "I003",
+      "issue": "Whether the authorities violated natural justice",
+      "court_reasoning": [
+        {
+          "step": 1,
+          "proposition": "Reclassification exposed the petitioners and occupants to materially higher financial demands.",
+          "basis": "The properties were shifted from residential to commercial tariff treatment.",
+          "source_pages": [14, 17, 19]
+        },
+        {
+          "step": 2,
+          "proposition": "Affected persons were entitled to prior notice and an opportunity to explain the actual use of the premises.",
+          "basis": "Tariff classification required a factual assessment of the activity conducted within each property.",
+          "source_pages": [27, 35, 53]
+        },
+        {
+          "step": 3,
+          "proposition": "The respondents failed to prove that this opportunity was provided.",
+          "basis": "No documentary evidence of prior communication was produced.",
+          "source_pages": [35]
+        }
+      ],
+      "conclusion": "The demand notices were independently liable to be quashed for violation of natural justice."
+    }
+  ],
+  "reasoning_pattern": {
+    "name": "Recipient-Use Classification Pattern",
+    "formula": [
+      "Identify the person who actually uses the premises",
+      "Identify the activity performed by that person",
+      "Apply the statutory classification to that activity",
+      "Do not allow the provider's business model alone to determine the classification"
+    ],
+    "general_principle": "The legal character of premises should ordinarily follow their proven functional use rather than the commercial identity of the owner or service provider.",
+    "limits": [
+      "The ruling is fact-dependent.",
+      "Authorities may verify whether individual hostel rooms are genuinely used for residential activity.",
+      "The order should not be applied automatically to every establishment bearing the label hostel."
+    ]
+  },
+  "judicial_style": {
+    "pattern": "Textual, analogical, purposive and social-impact reasoning",
+    "features": [
+      "Textual reliance on statutory definitions of residence",
+      "Analogy between hostel rooms and rented residential apartments",
+      "Purposive interpretation of tariff and exemption provisions",
+      "Consideration of the ultimate economic burden on occupants",
+      "Reliance on earlier precedent involving the same functional-use question",
+      "Procedural review through natural justice"
+    ]
+  },
+  "thinkingos": {
+    "attention": "The real point was not whether hostel owners ran businesses, but how occupants actually used the premises.",
+    "observation": "The occupants lived and slept in the rooms, while authorities imposed commercial tariffs without proving prior notice.",
+    "understanding": "The dispute arose because the authorities classified the property by the provider's business identity rather than the recipient's use.",
+    "reasoning": "Functional residential use, statutory definitions, equal treatment and natural justice all supported residential classification.",
+    "communication": "A building does not become commercially used merely because its owner earns rent; the activity conducted inside it remains central."
+  },
+  "uncertainties_and_quality_notes": [
+    "The order contains broad social and constitutional observations, but the operative ruling is limited to hostels demonstrating comparable residential use.",
+    "The Court did not hold that every hostel must automatically receive residential classification.",
+    "This artifact reconstructs the Court's reasoning and does not independently assess whether the legal conclusions would be followed in every later case."
+  ],
+  "source_traceability": {
+    "status": "VERIFIED_FROM_SOURCE",
+    "review_status": "Ready for decision extraction"
+  }
+}
