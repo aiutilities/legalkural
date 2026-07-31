@@ -67,6 +67,7 @@ class OpenAIResponsesProvider(ModelProvider):
             "input": input_text,
             "max_output_tokens": request.max_output_tokens,
             "metadata": request.metadata,
+            "store": False,
         }
 
         if request.response_format == "json":

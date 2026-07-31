@@ -115,3 +115,23 @@ def test_live_requires_explicit_authorization(tmp_path: Path) -> None:
             max_source_characters=1000,
             allow_live=False,
         )
+
+
+def test_decode_live_review() -> None:
+    from aidpl.extraction_review_worker import decode_live_review
+
+    transport = {
+        "metadata_json": json.dumps({"status": "REVIEWED"}),
+        "timeline_json": json.dumps({"status": "REVIEWED"}),
+        "facts_json": json.dumps({"status": "REVIEWED"}),
+        "issues_json": json.dumps({"status": "REVIEWED"}),
+        "evidence_json": json.dumps({"status": "REVIEWED"}),
+        "review_status": "COMPLETE",
+        "changes_made": ["Consolidated candidates."],
+        "uncertainties": [],
+    }
+
+    reviewed = decode_live_review(transport)
+
+    assert reviewed["metadata"]["status"] == "REVIEWED"
+    assert reviewed["review_summary"]["status"] == "COMPLETE"

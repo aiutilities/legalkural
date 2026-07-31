@@ -60,45 +60,87 @@ def source_excerpt(path: Path, max_characters: int) -> str:
 def build_review_schema(
     schemas: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
+    # OpenAI strict Structured Outputs supports a constrained JSON Schema
+    # subset. Legal Kural's domain schemas intentionally contain flexible
+    # nested legal structures, so the provider transport uses JSON strings.
+    # Each string is parsed and validated locally against the authoritative
+    # Legal Kural schema after the model response is received.
+    del schemas
+
     return {
         "type": "object",
         "required": [
-            "metadata",
-            "timeline",
-            "facts",
-            "issues",
-            "evidence",
-            "review_summary",
+            "metadata_json",
+            "timeline_json",
+            "facts_json",
+            "issues_json",
+            "evidence_json",
+            "review_status",
+            "changes_made",
+            "uncertainties",
         ],
         "properties": {
-            "metadata": schemas["metadata.schema.json"],
-            "timeline": schemas["timeline.schema.json"],
-            "facts": schemas["facts.schema.json"],
-            "issues": schemas["issues.schema.json"],
-            "evidence": schemas["evidence.schema.json"],
-            "review_summary": {
-                "type": "object",
-                "required": [
-                    "status",
-                    "changes_made",
-                    "uncertainties",
-                ],
-                "properties": {
-                    "status": {"type": "string"},
-                    "changes_made": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                    "uncertainties": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                },
-                "additionalProperties": True,
+            "metadata_json": {"type": "string"},
+            "timeline_json": {"type": "string"},
+            "facts_json": {"type": "string"},
+            "issues_json": {"type": "string"},
+            "evidence_json": {"type": "string"},
+            "review_status": {"type": "string"},
+            "changes_made": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+            "uncertainties": {
+                "type": "array",
+                "items": {"type": "string"},
             },
         },
         "additionalProperties": False,
     }
+
+
+def decode_live_review(
+    transport: dict[str, Any],
+) -> dict[str, Any]:
+    mapping = {
+        "metadata": "metadata_json",
+        "timeline": "timeline_json",
+        "facts": "facts_json",
+        "issues": "issues_json",
+        "evidence": "evidence_json",
+    }
+
+    reviewed: dict[str, Any] = {}
+
+    for artifact_name, transport_name in mapping.items():
+        raw_value = transport.get(transport_name)
+
+        if not isinstance(raw_value, str):
+            raise ValueError(
+                f"Provider field {transport_name} must be a JSON string."
+            )
+
+        try:
+            parsed = json.loads(raw_value)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Provider field {transport_name} contains invalid JSON."
+            ) from exc
+
+        if not isinstance(parsed, dict):
+            raise ValueError(
+                f"Provider field {transport_name} must decode to an object."
+            )
+
+        reviewed[artifact_name] = parsed
+
+    reviewed["review_summary"] = {
+        "status": transport["review_status"],
+        "changes_made": transport["changes_made"],
+        "uncertainties": transport["uncertainties"],
+    }
+
+    return reviewed
 
 
 def build_mock_review(
@@ -154,6 +196,8 @@ Rules:
 5. Use null or empty arrays when the judgment does not establish a value.
 6. Mark uncertainty explicitly.
 7. Do not provide legal advice or editorial commentary.
+8. Return each reviewed artifact as a valid JSON-encoded string in its
+   corresponding *_json field.
 """
 
     user_prompt = json.dumps(
@@ -264,7 +308,7 @@ def run_review(
                 "Provider did not return a structured review object."
             )
 
-        reviewed = response.structured
+        reviewed = decode_live_review(response.structured)
         response_metadata = {
             "provider": response.provider,
             "model": response.model,
