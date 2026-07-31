@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Kural Facts",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_case_id",
+    "status",
+    "material_facts"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "reference_case_id": {"type": "string"},
+    "status": {"type": "string"},
+    "material_facts": {"type": "array"},
+    "undisputed_facts": {"type": "array"},
+    "disputed_facts": {"type": "array"}
+  }
+}

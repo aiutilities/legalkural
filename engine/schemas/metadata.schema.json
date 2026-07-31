@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Kural Metadata",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_case_id",
+    "status",
+    "court",
+    "case_numbers",
+    "dates",
+    "source_traceability"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "reference_case_id": {"type": "string"},
+    "status": {"type": "string"},
+    "court": {"type": ["string", "null"]},
+    "judge": {"type": ["string", "null"]},
+    "case_numbers": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "dates": {
+      "type": "object",
+      "required": ["reserved_on", "pronounced_on"],
+      "properties": {
+        "reserved_on": {"type": ["string", "null"]},
+        "pronounced_on": {"type": ["string", "null"]}
+      }
+    },
+    "source_traceability": {"type": "array"}
+  }
+}

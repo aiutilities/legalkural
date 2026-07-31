@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Kural Timeline",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_case_id",
+    "status",
+    "events"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "reference_case_id": {"type": "string"},
+    "status": {"type": "string"},
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "event", "source_pages"],
+        "properties": {
+          "date": {"type": ["string", "null"]},
+          "event": {"type": "string"},
+          "source_pages": {
+            "type": "array",
+            "items": {"type": "integer"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Kural Evidence",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_case_id",
+    "status",
+    "documentary_evidence",
+    "missing_evidence"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "reference_case_id": {"type": "string"},
+    "status": {"type": "string"},
+    "documentary_evidence": {"type": "array"},
+    "electronic_evidence": {"type": "array"},
+    "missing_evidence": {"type": "array"}
+  }
+}
