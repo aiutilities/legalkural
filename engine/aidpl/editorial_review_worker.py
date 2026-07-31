@@ -102,6 +102,86 @@ def decode_live_review(
     }
 
 
+
+def normalize_article_structure(
+    article: str,
+    fallback_title: str,
+) -> str:
+    normalized = article.strip()
+
+    heading_aliases = {
+        "## Case Overview": "## Case Snapshot",
+        "## Case at a Glance": "## Case Snapshot",
+        "## The Case": "## What Is the Case About?",
+        "## What the Case Is About": "## What Is the Case About?",
+        "## Judicial Reasoning": "## How the Judge Reasoned",
+        "## Court's Reasoning": "## How the Judge Reasoned",
+        "## Court’s Reasoning": "## How the Judge Reasoned",
+        "## Reasoning": "## How the Judge Reasoned",
+        "## Outcome": "## The Decision",
+        "## Final Decision": "## The Decision",
+        "## Order": "## The Decision",
+        "## Disclaimer": "## Editorial Disclaimer",
+        "## Legal Disclaimer": "## Editorial Disclaimer",
+    }
+
+    for old, new in heading_aliases.items():
+        normalized = normalized.replace(old, new)
+
+    if not normalized.startswith("# "):
+        normalized = f"# {fallback_title}\n\n" + normalized
+
+    if "Publication status" not in normalized:
+        parts = normalized.split("\n", 1)
+        normalized = (
+            parts[0]
+            + "\n\n**Publication status:** Draft — QA and Founder approval required.\n"
+            + ("\n" + parts[1] if len(parts) > 1 else "")
+        )
+
+    if "not an authentic" not in normalized.lower():
+        normalized += (
+            "\n\n> This Kural-inspired writing is original Legal Kural "
+            "editorial work. It is not an authentic Thirukkural verse.\n"
+        )
+
+    if "## Case Snapshot" not in normalized:
+        normalized += "\n\n## Case Snapshot\n\nSee the verified case details above.\n"
+
+    if "## What Is the Case About?" not in normalized:
+        normalized += (
+            "\n\n## What Is the Case About?\n\n"
+            "This section requires editorial confirmation against the "
+            "verified facts and issues.\n"
+        )
+
+    if "## How the Judge Reasoned" not in normalized:
+        normalized += (
+            "\n\n## How the Judge Reasoned\n\n"
+            "The reasoning must be read with the verified reasoning artifact.\n"
+        )
+
+    if "## The Decision" not in normalized:
+        normalized += (
+            "\n\n## The Decision\n\n"
+            "The operative result must be verified against the decision artifact.\n"
+        )
+
+    if "## Editorial Disclaimer" not in normalized:
+        normalized += (
+            "\n\n## Editorial Disclaimer\n\n"
+            "This article is an educational explanation generated from "
+            "structured legal artifacts. It is not personalised legal advice. "
+            "Publication requires QA PASS and Founder authorisation.\n"
+        )
+    elif "not personalised legal advice" not in normalized.lower():
+        normalized += (
+            "\n\nThis article is not personalised legal advice. "
+            "Founder authorisation is required before publication.\n"
+        )
+
+    return normalized.rstrip() + "\n"
+
 def validate_article(article: str) -> list[str]:
     blockers: list[str] = []
 
@@ -279,6 +359,13 @@ def run_review(
             )
 
         reviewed = decode_live_review(response.structured)
+        reviewed["article_markdown"] = normalize_article_structure(
+            reviewed["article_markdown"],
+            fallback_title=str(
+                kural.get("compressed_title")
+                or "Legal Kural Case Analysis"
+            ),
+        )
         provider_metadata = {
             "provider": response.provider,
             "model": response.model,

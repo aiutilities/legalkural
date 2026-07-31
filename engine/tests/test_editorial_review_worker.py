@@ -77,3 +77,35 @@ def test_live_authorization_boundary() -> None:
             provider_name="openai",
             allow_live=False,
         )
+
+
+def test_normalize_article_structure() -> None:
+    from aidpl.editorial_review_worker import (
+        normalize_article_structure,
+    )
+
+    article = (
+        "## Case Overview\n\n"
+        "A concise case account.\n\n"
+        "## Judicial Reasoning\n\n"
+        "The Court applied the law.\n\n"
+        "## Outcome\n\n"
+        "The petition was allowed.\n\n"
+        "## Disclaimer\n\n"
+        "Draft only.\n"
+    )
+
+    normalized = normalize_article_structure(
+        article,
+        "Fallback Title",
+    )
+
+    assert normalized.startswith("# Fallback Title")
+    assert "Publication status" in normalized
+    assert "## Case Snapshot" in normalized
+    assert "## What Is the Case About?" in normalized
+    assert "## How the Judge Reasoned" in normalized
+    assert "## The Decision" in normalized
+    assert "## Editorial Disclaimer" in normalized
+    assert "not an authentic" in normalized.lower()
+    assert "not personalised legal advice" in normalized.lower()
