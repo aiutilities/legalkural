@@ -1,9 +1,18 @@
 # Legal Kural
 
-## Vision
+An AI-native Legal Knowledge and Interpretation Platform.
 
-Legal Kural transforms court judgments into stories that everyone can understand while preserving legal accuracy.
+Powered by:
 
-Built using the AIDPL methodology.
+- Cogzidel Constitution
+- ThinkingOS
+- AIDPL
+- LearningOS
 
-Status: Foundation
+Current Sprint:
+
+LK-001 — ThinkingOS Validation
+
+Objective:
+
+Validate ThinkingOS using one real court judgment before building automation.
