@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+
+  "oral_evidence": [],
+
+  "documentary_evidence": [
+    {
+      "id": "D001",
+      "title": "Property Tax Demand Notices",
+      "purpose": "Commercial tariff classification",
+      "relates_to": ["I001"]
+    },
+    {
+      "id": "D002",
+      "title": "Water Tax / Water Charge Notices",
+      "purpose": "Commercial assessment",
+      "relates_to": ["I001"]
+    },
+    {
+      "id": "D003",
+      "title": "Municipal Property Classification Records",
+      "purpose": "Residential to Commercial conversion",
+      "relates_to": ["I001","I003"]
+    },
+    {
+      "id": "D004",
+      "title": "Earlier Madras High Court Judgment (22-03-2024)",
+      "purpose": "Judicial precedent",
+      "relates_to": ["I001","I004"]
+    },
+    {
+      "id": "D005",
+      "title": "Relevant Municipal Statutes",
+      "purpose": "Definition of Residence",
+      "relates_to": ["I001"]
+    }
+  ],
+
+  "electronic_evidence": [
+    {
+      "id": "E001",
+      "title": "Municipal Online Assessment Portal",
+      "purpose": "Commercial reclassification records"
+    }
+  ],
+
+  "missing_evidence": [
+    {
+      "title": "Proof of prior notice",
+      "finding": "Respondents produced no documentary proof."
+    }
+  ],
+
+  "court_findings": [
+    {
+      "finding": "Actual residential use outweighed commercial ownership."
+    },
+    {
+      "finding": "Authorities failed to establish compliance with natural justice."
+    },
+    {
+      "finding": "Recipient perspective governs classification."
+    }
+  ],
+
+  "status": "VERIFIED"
+}
