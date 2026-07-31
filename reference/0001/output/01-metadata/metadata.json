@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+  "source": {
+    "file_name": "judgment.pdf",
+    "repository_path": "reference/0001/input/judgment.pdf",
+    "sha256": "34125e08212f13d4093d995742a1604fe7991c480e8357a4f89188f31459e770",
+    "page_count": 57,
+    "language": "English",
+    "document_type": "Common Order",
+    "document_status": "Complete",
+    "source_portal": "Madras High Court JUDIS",
+    "uploaded_on_source_portal": "2025-11-10T10:38:55+05:30"
+  },
+  "court": {
+    "name": "High Court of Judicature at Madras",
+    "jurisdiction": "Tamil Nadu, India",
+    "court_level": "High Court",
+    "bench_type": "Single Judge",
+    "judge": [
+      {
+        "name": "Justice Krishnan Ramasamy",
+        "role": "Presiding Judge"
+      }
+    ]
+  },
+  "dates": {
+    "reserved_on": "2025-08-29",
+    "pronounced_on": "2025-11-07"
+  },
+  "case": {
+    "title": "M. Divya and Others v. Municipal and Revenue Authorities",
+    "short_title": "Hostel Residential Tariff Batch",
+    "lead_case_number": "W.P.No.10194 of 2025",
+    "case_type": "Writ Petition under Article 226 of the Constitution of India",
+    "disposition_document": "Common Order",
+    "batch_case_numbers": [
+      "W.P.No.10194 of 2025",
+      "W.P.No.4552 of 2025",
+      "W.P.No.4481 of 2025",
+      "W.P.No.4472 of 2025",
+      "W.P.No.4477 of 2025",
+      "W.P.No.7619 of 2025",
+      "W.P.No.11033 of 2025",
+      "W.P.No.11035 of 2025",
+      "W.P.No.11038 of 2025",
+      "W.P.No.12221 of 2025",
+      "W.P.No.12224 of 2025",
+      "W.P.No.12235 of 2025",
+      "W.P.No.12230 of 2025",
+      "W.P.No.12238 of 2025",
+      "W.P.No.12243 of 2025",
+      "W.P.No.12251 of 2025",
+      "W.P.No.12253 of 2025",
+      "W.P.No.12245 of 2025",
+      "W.P.No.12249 of 2025",
+      "W.P.No.12255 of 2025",
+      "W.P.No.12604 of 2025",
+      "W.P.No.24189 of 2025",
+      "W.P.No.26937 of 2025",
+      "W.P.No.26939 of 2025",
+      "W.P.No.26941 of 2025",
+      "W.P.No.26942 of 2025",
+      "W.P.No.26944 of 2025",
+      "W.P.No.26951 of 2025",
+      "W.P.No.31337 of 2025",
+      "W.P.No.31342 of 2025"
+    ]
+  },
+  "parties": {
+    "petitioners": {
+      "description": "Owners or operators of working men's and women's hostels and paying-guest accommodation",
+      "named_examples": [
+        "M. Divya",
+        "Easwaramoorthi",
+        "P. Jothimani",
+        "V. Anitha",
+        "R. Anitha",
+        "D. Dhanagopal",
+        "Subburayan Mens PG",
+        "V. P. Kumaravel"
+      ]
+    },
+    "respondents": {
+      "description": "Municipal corporations, revenue authorities, water and sewerage authorities and related government bodies",
+      "principal_authorities": [
+        "Greater Chennai Corporation",
+        "Coimbatore City Municipal Corporation",
+        "Chennai Metropolitan Water Supply and Sewerage Board",
+        "Government of Tamil Nadu"
+      ]
+    }
+  },
+  "subject": {
+    "primary_domain": "Municipal and Tax Law",
+    "secondary_domains": [
+      "Constitutional Law",
+      "Administrative Law",
+      "Property Tax",
+      "Water Charges",
+      "Electricity Tariff",
+      "Natural Justice",
+      "Hostel Regulation"
+    ],
+    "central_question": "Whether hostel premises used by working men and women as sleeping accommodation must be classified under residential or commercial tariffs.",
+    "procedural_question": "Whether the High Court may entertain writ petitions despite an alternative statutory appeal when violations of natural justice and questions of law are raised."
+  },
+  "relief_sought": [
+    "Quashing of property-tax, water-tax, water-charge and related commercial-tariff demands",
+    "Restoration or recognition of residential classification",
+    "Reassessment under residential tariffs",
+    "Protection against demands issued without prior notice or opportunity"
+  ],
+  "source_traceability": {
+    "court_and_dates": "Page 1",
+    "case_numbers": "Pages 1-13",
+    "common_order_and_case_nature": "Page 14",
+    "metadata_status": "VERIFIED_FROM_SOURCE"
+  },
+  "extraction": {
+    "method": "Manual ThinkingOS reference extraction",
+    "confidence": "High",
+    "review_status": "Ready for timeline extraction",
+    "generated_on": "2026-07-31"
+  }
+}
