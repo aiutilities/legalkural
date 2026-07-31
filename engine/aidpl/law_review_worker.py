@@ -10,6 +10,7 @@ from typing import Any
 from jsonschema import validate
 
 from .providers import ModelRequest, create_provider
+from .schema_repair import repair_to_schema
 
 
 def utc_now() -> str:
@@ -231,6 +232,18 @@ def run_review(
             "usage": response.usage,
         }
 
+    repair_result = repair_to_schema(
+        provider=provider,
+        agent_id="LK-LAW-SCHEMA-CRITIC",
+        task="Repair the reviewed law artifact to its schema.",
+        case_id=case_id,
+        payload=reviewed["law"],
+        schema=schema,
+        max_attempts=2,
+        max_output_tokens=12000,
+    )
+    reviewed["law"] = repair_result.payload
+
     validate(instance=reviewed["law"], schema=schema)
 
     backup_path = (
@@ -258,6 +271,11 @@ def run_review(
         "completed_at_utc": utc_now(),
         "provider": provider_metadata,
         "review_summary": reviewed["review_summary"],
+        "schema_repair": {
+            "repaired": repair_result.repaired,
+            "attempts": repair_result.attempts,
+            "validation_errors": repair_result.validation_errors,
+        },
         "validated_artifact": "06-law/law.json",
         "backup": str(backup_path),
         "live_inference": provider_name != "mock",
