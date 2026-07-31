@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Kural Decision",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_case_id",
+    "status",
+    "outcome",
+    "operative_directions",
+    "relief_granted",
+    "relief_denied",
+    "costs",
+    "limitations",
+    "source_traceability"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "reference_case_id": {"type": "string"},
+    "status": {"type": "string"},
+    "outcome": {"type": ["string", "null"]},
+    "operative_directions": {"type": "array"},
+    "relief_granted": {"type": "array"},
+    "relief_denied": {"type": "array"},
+    "costs": {"type": ["string", "null"]},
+    "limitations": {"type": "array"},
+    "source_traceability": {"type": "array"},
+    "quality_notes": {"type": "array"}
+  }
+}

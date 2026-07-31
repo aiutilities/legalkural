@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Kural Judicial Reasoning",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_case_id",
+    "status",
+    "issues",
+    "reasoning_steps",
+    "accepted_arguments",
+    "rejected_arguments",
+    "ratio_candidates",
+    "limitations",
+    "source_traceability"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "reference_case_id": {"type": "string"},
+    "status": {"type": "string"},
+    "issues": {"type": "array"},
+    "reasoning_steps": {"type": "array"},
+    "accepted_arguments": {"type": "array"},
+    "rejected_arguments": {"type": "array"},
+    "ratio_candidates": {"type": "array"},
+    "limitations": {"type": "array"},
+    "source_traceability": {"type": "array"},
+    "quality_notes": {"type": "array"}
+  }
+}
