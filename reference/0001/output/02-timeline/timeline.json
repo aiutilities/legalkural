@@ -1,0 +1,132 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+  "timeline_type": "case_and_legal_context",
+  "events": [
+    {
+      "date": "2023",
+      "date_precision": "year",
+      "event_type": "related_litigation",
+      "title": "Earlier GST batch instituted",
+      "description": "A related batch led by W.P.No.28486 of 2023 raised whether hostel accommodation used by students and working persons qualified as residential use for GST purposes.",
+      "source_pages": [18, 36],
+      "confidence": "high"
+    },
+    {
+      "date": "2024-03-22",
+      "date_precision": "day",
+      "event_type": "precedent",
+      "title": "Earlier GST judgment delivered",
+      "description": "The Madras High Court held in the related GST batch that the nature of hostel use must be viewed from the recipient's perspective and that rooms used as sleeping accommodation were residential premises.",
+      "source_pages": [18, 36, 52],
+      "confidence": "high"
+    },
+    {
+      "date": "2024-05-14",
+      "date_precision": "day",
+      "event_type": "administrative_notice",
+      "title": "One impugned demand notice issued",
+      "description": "Notice No.7/24-25/736410 dated 14 May 2024 was among the demands challenged in the batch.",
+      "source_pages": [5],
+      "confidence": "high"
+    },
+    {
+      "date": "2024-2025",
+      "date_precision": "financial_year",
+      "event_type": "tariff_reclassification",
+      "title": "Hostel properties treated under commercial tariffs",
+      "description": "Municipal, water and related authorities reclassified or assessed multiple hostel properties under commercial tariffs and raised enhanced demands.",
+      "source_pages": [5, 6, 7, 8, 9, 14],
+      "confidence": "high"
+    },
+    {
+      "date": "2025-03-07",
+      "date_precision": "day",
+      "event_type": "recovery_notice",
+      "title": "Recovery notice issued",
+      "description": "An impugned recovery notice dated 7 March 2025 was challenged in the writ proceedings.",
+      "source_pages": [9],
+      "confidence": "high"
+    },
+    {
+      "date": "2025",
+      "date_precision": "year",
+      "event_type": "litigation",
+      "title": "Batch of writ petitions filed",
+      "description": "Hostel owners and operators filed multiple writ petitions under Article 226 challenging commercial classification and tax, water-charge and related demands.",
+      "source_pages": [1, 2, 3, 4, 5, 14],
+      "confidence": "high"
+    },
+    {
+      "date": "2025-06-13",
+      "date_precision": "day",
+      "event_type": "water_demand",
+      "title": "Water-related demand notice issued",
+      "description": "Demand notice Se.Ku.Va/pama-178/2025 dated 13 June 2025 was challenged as illegal and improper.",
+      "source_pages": [9],
+      "confidence": "high"
+    },
+    {
+      "date": "2025-2026",
+      "date_precision": "financial_year",
+      "event_type": "property_tax_demand",
+      "title": "Commercial property-tax demands raised",
+      "description": "Several petitioners challenged online reclassification of residential hostel properties as commercial and consequential demands for financial year 2025-2026.",
+      "source_pages": [9, 10, 11, 12],
+      "confidence": "high"
+    },
+    {
+      "date": null,
+      "date_precision": "undated",
+      "event_type": "procedural_defect",
+      "title": "No prior notice or hearing established",
+      "description": "The authorities produced no documentary evidence proving prior communication before converting the properties from residential to commercial tariffs.",
+      "source_pages": [14, 17, 35],
+      "confidence": "high"
+    },
+    {
+      "date": "2025-08-29",
+      "date_precision": "day",
+      "event_type": "court_proceeding",
+      "title": "Common order reserved",
+      "description": "The High Court reserved judgment in the batch.",
+      "source_pages": [1],
+      "confidence": "high"
+    },
+    {
+      "date": "2025-11-07",
+      "date_precision": "day",
+      "event_type": "judgment",
+      "title": "Common order pronounced",
+      "description": "The High Court pronounced the common order, held the hostel use residential in the cases before it, quashed the impugned notices and directed residential tariff treatment.",
+      "source_pages": [1, 52, 53],
+      "confidence": "high"
+    },
+    {
+      "date": "2025-11-10T10:38:55+05:30",
+      "date_precision": "timestamp",
+      "event_type": "publication",
+      "title": "Judgment uploaded to JUDIS",
+      "description": "The judgment was uploaded to the Madras High Court JUDIS portal.",
+      "source_pages": [1],
+      "confidence": "high"
+    }
+  ],
+  "duration_analysis": {
+    "earliest_case_specific_dated_notice": "2024-05-14",
+    "judgment_pronounced": "2025-11-07",
+    "approximate_elapsed_period": "About 18 months from the earliest expressly dated impugned notice to judgment",
+    "reserved_to_pronounced": "70 days",
+    "reason_for_duration": [
+      "The matter involved a batch of approximately 30 writ petitions.",
+      "Multiple municipal and utility authorities were involved.",
+      "The Court examined several statutes, regulations and constitutional principles.",
+      "The Court also considered and reproduced substantial reasoning from earlier GST litigation."
+    ],
+    "qualification": "The judgment does not provide filing and hearing dates for every individual writ petition; therefore, the complete duration of each petition cannot be calculated from the order alone."
+  },
+  "source_traceability": {
+    "status": "VERIFIED_FROM_SOURCE",
+    "review_status": "Ready for facts extraction"
+  }
+}
