@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "product": "Legal Kural",
+  "orchestrator": "AI CEO",
+  "agents": [
+    {
+      "id": "AI-CEO",
+      "name": "AI CEO",
+      "owns": ["planning", "delegation", "risk", "quality", "sprint closure"],
+      "outputs": ["execution plan", "agent assignments", "closure report"]
+    },
+    {
+      "id": "LK-INTAKE",
+      "name": "Judgment Intake Agent",
+      "owns": ["source verification", "file integrity", "page count", "document completeness"],
+      "outputs": ["manifest.json", "source-integrity.txt"]
+    },
+    {
+      "id": "LK-EXTRACT",
+      "name": "Legal Extraction Agent",
+      "owns": ["metadata", "timeline", "facts", "issues", "evidence"],
+      "outputs": [
+        "01-metadata/metadata.json",
+        "02-timeline/timeline.json",
+        "03-facts/facts.json",
+        "04-issues/issues.json",
+        "05-evidence/evidence.json"
+      ]
+    },
+    {
+      "id": "LK-LAW",
+      "name": "Legal Analysis Agent",
+      "owns": ["statutes", "regulations", "precedents", "legal doctrines"],
+      "outputs": ["06-law/law.json"]
+    },
+    {
+      "id": "LK-REASON",
+      "name": "Judicial Reasoning Agent",
+      "owns": ["reasoning reconstruction", "judge pattern", "decision extraction"],
+      "outputs": [
+        "07-reasoning/reasoning.json",
+        "08-decision/decision.json"
+      ]
+    },
+    {
+      "id": "LK-KURAL",
+      "name": "Kural Reasoning Agent",
+      "owns": ["human conflict", "universal principle", "compression", "Kural insight"],
+      "outputs": ["09-kural/kural.md"]
+    },
+    {
+      "id": "LK-EDITOR",
+      "name": "Legal Editorial Agent",
+      "owns": ["story", "plain language", "lawyer notes", "student notes", "article structure"],
+      "outputs": ["10-article/article.md"]
+    },
+    {
+      "id": "LK-QA",
+      "name": "Legal Fidelity and QA Agent",
+      "owns": ["fact traceability", "citation checks", "schema checks", "publication gate"],
+      "outputs": ["evidence/validation-report.json"]
+    },
+    {
+      "id": "LK-LEARN",
+      "name": "LearningOS Agent",
+      "owns": ["story", "lesson", "pattern", "improvement candidate"],
+      "outputs": ["11-learning/thinking-review.md"]
+    }
+  ]
+}

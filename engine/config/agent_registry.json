@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "sequence": [
+    "LK-INTAKE",
+    "LK-EXTRACT",
+    "LK-LAW",
+    "LK-REASON",
+    "LK-KURAL",
+    "LK-EDITOR",
+    "LK-QA",
+    "LK-LEARN"
+  ],
+  "publication_requires": [
+    "LK-QA:PASS",
+    "FOUNDER:AUTHORIZED"
+  ]
+}
