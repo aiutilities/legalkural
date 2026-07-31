@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+  "material_facts": [
+    {
+      "id": "F001",
+      "fact": "The petitioners operated hostels or paying-guest accommodation for working men, working women and similar occupants.",
+      "source_pages": [15, 16, 19, 22],
+      "status": "verified"
+    },
+    {
+      "id": "F002",
+      "fact": "The inmates shared rooms primarily because independent houses, flats or apartments were less affordable.",
+      "source_pages": [15, 16, 22, 25],
+      "status": "verified"
+    },
+    {
+      "id": "F003",
+      "fact": "The inmates used the hostel premises after work for sleeping, eating, bathing, washing clothes and other ordinary residential activities.",
+      "source_pages": [15, 16, 22, 25, 26],
+      "status": "verified"
+    },
+    {
+      "id": "F004",
+      "fact": "The hostel facilities included sleeping rooms, bathrooms, toilets, washing areas, common kitchens and dining or refreshment areas.",
+      "source_pages": [16, 25],
+      "status": "verified"
+    },
+    {
+      "id": "F005",
+      "fact": "The petitioners received rent and operated the hostels as businesses.",
+      "source_pages": [19, 22, 24, 28],
+      "status": "verified"
+    },
+    {
+      "id": "F006",
+      "fact": "Municipal, water and related authorities classified or reclassified the hostel properties under commercial tariffs.",
+      "source_pages": [14, 19, 22],
+      "status": "verified"
+    },
+    {
+      "id": "F007",
+      "fact": "Commercial classification resulted in enhanced demands for property tax, water tax, water charges and, in some cases, electricity charges.",
+      "source_pages": [5, 6, 7, 8, 9, 19],
+      "status": "verified"
+    },
+    {
+      "id": "F008",
+      "fact": "The economic burden of higher tariffs would ultimately be passed on to hostel inmates.",
+      "source_pages": [16, 17, 23],
+      "status": "verified"
+    },
+    {
+      "id": "F009",
+      "fact": "The authorities relied on the business nature of hostel operations and provisions referring to private hostels or lodging houses.",
+      "source_pages": [19, 20, 31, 32, 33],
+      "status": "verified"
+    },
+    {
+      "id": "F010",
+      "fact": "The petitioners relied on statutory definitions treating use of a house or part of it as a sleeping apartment as residence.",
+      "source_pages": [17, 18, 28, 29, 30],
+      "status": "verified"
+    },
+    {
+      "id": "F011",
+      "fact": "The respondents did not produce documentary evidence establishing that prior notice or communication had been given before tariff conversion.",
+      "source_pages": [35],
+      "status": "verified"
+    },
+    {
+      "id": "F012",
+      "fact": "A statutory appeal was available under Section 100 of the Tamil Nadu Urban Local Bodies Act, 1998.",
+      "source_pages": [19, 21, 34, 35],
+      "status": "verified"
+    },
+    {
+      "id": "F013",
+      "fact": "The petitioners approached the High Court directly under Article 226 instead of first pursuing the statutory appeal.",
+      "source_pages": [19, 21, 35, 36],
+      "status": "verified"
+    },
+    {
+      "id": "F014",
+      "fact": "An earlier Madras High Court GST judgment dated 22 March 2024 had treated comparable hostel use from the recipient's perspective as residential use.",
+      "source_pages": [18, 36, 52],
+      "status": "verified"
+    }
+  ],
+  "undisputed_facts": [
+    "The petitioners operated hostel accommodation.",
+    "The occupants used rooms for sleeping and ordinary daily living.",
+    "The authorities imposed or sought to impose commercial tariffs.",
+    "Higher taxes and charges could be passed on to inmates.",
+    "A statutory appeal mechanism existed."
+  ],
+  "disputed_facts_or_characterisations": [
+    {
+      "question": "Whether the physical and functional use of the hostel premises was residential or commercial.",
+      "petitioners_position": "The recipients used the premises only as residences or sleeping apartments.",
+      "respondents_position": "The hostel business and regulatory classification justified commercial treatment."
+    },
+    {
+      "question": "Whether adequate prior notice was issued before reclassification.",
+      "petitioners_position": "No prior notice or opportunity was given.",
+      "respondents_position": "The judgment records no documentary proof produced by the respondents establishing prior communication."
+    }
+  ],
+  "facts_not_established_from_the_order": [
+    "The exact date on which each petitioner began hostel operations.",
+    "The exact filing date of every writ petition.",
+    "The exact occupancy, rent and financial profile of every hostel.",
+    "Whether every room in every hostel was inspected before assessment.",
+    "Whether any individual room was used for a separate commercial activity."
+  ],
+  "fact_interpretation_boundary": {
+    "rule": "This artifact records factual propositions and party positions only. Legal conclusions and judicial interpretations belong in later artifacts.",
+    "status": "ENFORCED"
+  },
+  "source_traceability": {
+    "status": "VERIFIED_FROM_SOURCE",
+    "review_status": "Ready for issues extraction"
+  }
+}
