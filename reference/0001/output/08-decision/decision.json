@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+
+  "decision_summary": {
+    "outcome": "Allowed",
+    "court": "High Court of Judicature at Madras",
+    "decision_type": "Common Order"
+  },
+
+  "issue_disposition": [
+    {
+      "issue": "Residential vs Commercial Classification",
+      "finding": "Hostel premises used for residential occupation cannot automatically be treated as commercial merely because the owner conducts a hostel business."
+    },
+    {
+      "issue": "Maintainability",
+      "finding": "The writ petitions were maintainable despite the statutory appeal because questions of law and natural justice arose."
+    },
+    {
+      "issue": "Natural Justice",
+      "finding": "Demand notices issued without prior notice or opportunity violated principles of natural justice."
+    }
+  ],
+
+  "operative_directions": [
+    "Impugned commercial tariff demand notices were quashed.",
+    "Authorities shall treat eligible hostel premises under residential classification where facts are comparable.",
+    "Authorities remain free to verify actual usage wherever necessary.",
+    "Future assessments must comply with principles of natural justice."
+  ],
+
+  "relief_granted": [
+    "Commercial assessments set aside.",
+    "Residential treatment restored where applicable.",
+    "Connected writ petitions allowed."
+  ],
+
+  "relief_refused": [],
+
+  "costs": {
+    "awarded": false,
+    "details": "No order as to costs."
+  },
+
+  "thinkingos_summary": {
+    "attention": "Wrong legal classification.",
+    "observation": "Actual residential use prevailed.",
+    "understanding": "Function outweighed business identity.",
+    "reasoning": "Law protects substance over form.",
+    "communication": "Living in a building is more important than how the owner earns income from it."
+  },
+
+  "status": "VERIFIED"
+}
