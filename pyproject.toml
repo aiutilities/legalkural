@@ -7,6 +7,9 @@ name = "legalkural-engine"
 version = "0.1.0"
 description = "ThinkingOS engine for Legal Kural"
 requires-python = ">=3.11"
+dependencies = [
+  "pypdf>=5.0"
+]
 
 [project.optional-dependencies]
 dev = [

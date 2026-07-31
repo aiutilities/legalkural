@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(
+  cd "$(dirname "${BASH_SOURCE[0]}")/.." &&
+  pwd
+)"
+
+cd "$ROOT"
+
+PYTHON312="/opt/homebrew/bin/python3.12"
+
+test -x "$PYTHON312" || {
+  echo "ERROR: Python 3.12 is required."
+  echo "Install with: brew install python@3.12"
+  exit 1
+}
+
+if [ ! -x .venv/bin/python ]; then
+  "$PYTHON312" -m venv .venv
+fi
+
+.venv/bin/python -m pip install --upgrade pip setuptools wheel
+.venv/bin/python -m pip install "pypdf>=5.0" "pytest>=8.0"
+
+echo
+echo "============================================================"
+echo "LEGAL KURAL DEVELOPMENT ENVIRONMENT READY"
+echo "============================================================"
+echo "Python : $(.venv/bin/python --version)"
+echo "Pip    : $(.venv/bin/pip --version)"
+echo "Root   : $ROOT"
+echo "============================================================"

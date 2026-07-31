@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(
+  cd "$(dirname "${BASH_SOURCE[0]}")/.." &&
+  pwd
+)"
+
+PIP="$ROOT/.venv/bin/pip"
+
+test -x "$PIP" || {
+  echo "ERROR: Legal Kural virtual environment is missing."
+  echo "Run: ./bin/bootstrap"
+  exit 1
+}
+
+exec "$PIP" "$@"

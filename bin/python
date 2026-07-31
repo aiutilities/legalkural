@@ -6,14 +6,12 @@ ROOT="$(
   pwd
 )"
 
-cd "$ROOT"
-
 PYTHON="$ROOT/.venv/bin/python"
 
 test -x "$PYTHON" || {
-  echo "ERROR: Virtual environment missing."
+  echo "ERROR: Legal Kural virtual environment is missing."
   echo "Run: ./bin/bootstrap"
   exit 1
 }
 
-exec env PYTHONPATH=engine "$PYTHON" -m legalkural "$@"
+exec "$PYTHON" "$@"

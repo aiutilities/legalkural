@@ -27,3 +27,7 @@ coverage/
 
 # Logs
 *.log
+
+# Local one-time setup scripts
+setup-*.sh
+.pytest_cache/

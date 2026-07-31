@@ -7,4 +7,13 @@ ROOT="$(
 )"
 
 cd "$ROOT"
-exec env PYTHONPATH=engine python3 -m aidpl "$@"
+
+PYTHON="$ROOT/.venv/bin/python"
+
+test -x "$PYTHON" || {
+  echo "ERROR: Virtual environment missing."
+  echo "Run: ./bin/bootstrap"
+  exit 1
+}
+
+exec env PYTHONPATH=engine "$PYTHON" -m aidpl "$@"

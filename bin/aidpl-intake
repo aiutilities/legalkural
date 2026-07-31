@@ -16,4 +16,4 @@ test -x "$PYTHON" || {
   exit 1
 }
 
-exec env PYTHONPATH=engine "$PYTHON" -m legalkural "$@"
+exec env PYTHONPATH=engine "$PYTHON" -m aidpl.intake_worker "$@"
