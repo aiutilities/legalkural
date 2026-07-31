@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Kural Editorial Brief",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_case_id",
+    "status",
+    "compressed_title",
+    "human_conflict",
+    "legal_holding",
+    "universal_principle",
+    "kural_inspired_english",
+    "kural_inspired_tamil",
+    "editorial_boundary",
+    "source_traceability",
+    "requires_human_editorial_review"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "reference_case_id": {"type": "string"},
+    "status": {"type": "string"},
+    "compressed_title": {"type": "string"},
+    "human_conflict": {"type": "string"},
+    "legal_holding": {"type": "string"},
+    "universal_principle": {"type": "string"},
+    "kural_inspired_english": {"type": "string"},
+    "kural_inspired_tamil": {"type": ["string", "null"]},
+    "editorial_boundary": {"type": "string"},
+    "source_traceability": {"type": "array"},
+    "quality_notes": {"type": "array"},
+    "requires_human_editorial_review": {"type": "boolean"}
+  }
+}
