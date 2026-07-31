@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "reference_case_id": "LK-REF-0001",
+  "constitutional_provisions": [
+    {
+      "id": "C001",
+      "provision": "Article 226 of the Constitution of India",
+      "relevance": "Empowers the High Court to entertain writ petitions involving legal questions and violations of natural justice despite an alternative statutory remedy.",
+      "source_pages": [5, 21, 35, 36]
+    },
+    {
+      "id": "C002",
+      "provision": "Article 14 of the Constitution of India",
+      "relevance": "Invoked in the Court's reasoning against unequal tariff treatment that burdens economically weaker hostel residents compared with occupants of houses and apartments.",
+      "source_pages": [26, 27, 33, 34]
+    }
+  ],
+  "statutes": [
+    {
+      "id": "S001",
+      "name": "Coimbatore City Municipal Corporation Act, 1981",
+      "provision": "Section 2(36)",
+      "subject": "Definition of residence or reside",
+      "principle": "Use of any portion of a house or hut as a sleeping apartment may constitute residence.",
+      "source_pages": [17, 18, 28, 29, 30]
+    },
+    {
+      "id": "S002",
+      "name": "Chennai City Municipal Corporation Act, 1919",
+      "provision": "Section 2(23)",
+      "subject": "Definition of residence or reside",
+      "principle": "Use of premises as a sleeping apartment is relevant to residential character.",
+      "source_pages": [18, 29, 30]
+    },
+    {
+      "id": "S003",
+      "name": "Tamil Nadu Urban Local Bodies Act, 1998",
+      "provisions": [
+        "Section 2(34)",
+        "Section 100"
+      ],
+      "subjects": [
+        "Definition of residence",
+        "Appeal to the Taxation Appeals Committee"
+      ],
+      "principle": "The Act supplies both the residential definition and the alternative statutory appeal relied upon by the respondents.",
+      "source_pages": [19, 21, 29, 34, 35, 36]
+    },
+    {
+      "id": "S004",
+      "name": "Tamil Nadu Hostels and Homes for Women and Children (Regulation) Act, 2014",
+      "provision": "Section 2(e)",
+      "subject": "Definition of hostel or lodging house",
+      "principle": "The Court treated this regulatory definition as serving protection of women and children, not as determinative of municipal tariff classification.",
+      "source_pages": [20, 32, 33]
+    }
+  ],
+  "regulations": [
+    {
+      "id": "R001",
+      "name": "CMWSS Service Charges (Levy and Collection) Regulations, 1998",
+      "provision": "Regulation 4(ii)",
+      "subject": "Commercial premises",
+      "principle": "The provision includes private hostels within listed commercial premises, but the Court interpreted its application according to actual use.",
+      "source_pages": [19, 31, 32]
+    },
+    {
+      "id": "R002",
+      "name": "CMWSS Service Charges (Levy and Collection) Regulations, 1998",
+      "provision": "Regulation 7",
+      "subject": "Domestic residential premises",
+      "principle": "Dwelling units and specified residential hostels fall within domestic residential premises; actual residential use was central to the Court's application.",
+      "source_pages": [31, 32]
+    }
+  ],
+  "legal_doctrines": [
+    {
+      "id": "D001",
+      "name": "Principles of Natural Justice",
+      "rule": "A person affected by adverse reclassification and enhanced demands should receive prior notice and an opportunity to respond.",
+      "application": "No documentary proof of prior notice was produced by the authorities.",
+      "source_pages": [14, 17, 35, 52, 53]
+    },
+    {
+      "id": "D002",
+      "name": "Alternative Remedy Exception",
+      "rule": "Availability of a statutory appeal does not invariably bar writ jurisdiction where natural justice is violated or a substantial legal interpretation issue arises.",
+      "application": "The High Court entertained the petitions under Article 226.",
+      "source_pages": [19, 21, 34, 35, 36]
+    },
+    {
+      "id": "D003",
+      "name": "Substance and Actual Use over Form",
+      "rule": "Tariff classification should reflect the actual activity conducted by the occupants rather than merely the owner's commercial receipt of rent.",
+      "application": "Sleeping and ordinary living activities were treated as residential use.",
+      "source_pages": [18, 22, 23, 24, 25, 26, 27]
+    },
+    {
+      "id": "D004",
+      "name": "Purposive and Beneficial Interpretation",
+      "rule": "A beneficial provision should be interpreted consistently with its object and the burden it intends to reduce.",
+      "application": "The Court considered the burden that commercial tariffs would place on hostel residents.",
+      "source_pages": [33, 49, 50, 51]
+    }
+  ],
+  "precedents": [
+    {
+      "id": "P001",
+      "case": "W.P.No.28486 of 2023 and connected matters",
+      "court": "High Court of Judicature at Madras",
+      "decision_date": "2024-03-22",
+      "principle": "Hostel accommodation used as sleeping apartments must be examined from the recipient's usage perspective and may constitute residential premises.",
+      "treatment": "Followed and applied",
+      "source_pages": [18, 36, 37, 52]
+    },
+    {
+      "id": "P002",
+      "case": "Taghar Vasudeva Ambrish v. Appellate Authority for Advance Ruling",
+      "court": "High Court of Karnataka",
+      "principle": "Leasing residential premises as hostels to students and working professionals may constitute renting of residential dwelling for use as residence.",
+      "treatment": "Quoted within the earlier GST reasoning reproduced by the Court",
+      "source_pages": [48, 49, 50]
+    },
+    {
+      "id": "P003",
+      "case": "Collector of Central Excise v. Parle Exports (P) Ltd.",
+      "citation": "[1989] 1 SCC 345",
+      "court": "Supreme Court of India",
+      "principle": "The object and purpose of a notification should guide harmonious interpretation.",
+      "source_pages": [50]
+    },
+    {
+      "id": "P004",
+      "case": "Government of Kerala v. Mother Superior Adoration Convent",
+      "court": "Supreme Court of India",
+      "decision_date": "2021-03-01",
+      "principle": "Beneficial exemption provisions may receive liberal interpretation consistent with their purpose.",
+      "source_pages": [50, 51]
+    }
+  ],
+  "legal_rule_synthesised": {
+    "rule": "For municipal and utility tariff classification, the decisive consideration is the actual use of the premises by the recipient. Commercial operation by the owner does not by itself convert residential living activity into commercial use.",
+    "procedural_rule": "Commercial reclassification and enhanced demands issued without prior notice violate natural justice, permitting writ review notwithstanding an alternative statutory appeal.",
+    "status": "DERIVED_FROM_JUDGMENT_REASONING"
+  },
+  "quality_notes": [
+    "The judgment's extracted text contains an unclear Article 19 reference; this artifact does not normalise or rely upon that uncertain citation.",
+    "The law artifact records provisions and principles discussed in the judgment and is not personalised legal advice."
+  ],
+  "source_traceability": {
+    "status": "VERIFIED_FROM_SOURCE",
+    "review_status": "Ready for judicial reasoning extraction"
+  }
+}
