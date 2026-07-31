@@ -28,7 +28,12 @@ class OpenAIResponsesProvider(ModelProvider):
             or os.getenv("OPENAI_BASE_URL")
             or "https://api.openai.com/v1"
         ).rstrip("/")
-        self.timeout_seconds = timeout_seconds
+        self.timeout_seconds = int(
+            os.getenv("OPENAI_TIMEOUT_SECONDS", str(timeout_seconds))
+        )
+        self.max_attempts = int(
+            os.getenv("OPENAI_MAX_ATTEMPTS", "3")
+        )
 
     def _require_configuration(self) -> None:
         if not self.api_key:
@@ -90,6 +95,7 @@ class OpenAIResponsesProvider(ModelProvider):
             },
             payload=payload,
             timeout_seconds=self.timeout_seconds,
+            max_attempts=self.max_attempts,
         )
 
         text = self._extract_text(raw)
