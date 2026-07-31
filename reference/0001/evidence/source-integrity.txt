@@ -1,0 +1,4 @@
+Reference Case: 0001
+Source File: reference/0001/input/judgment.pdf
+SHA-256: 34125e08212f13d4093d995742a1604fe7991c480e8357a4f89188f31459e770
+Status: VERIFIED
