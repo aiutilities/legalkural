@@ -1,0 +1,18 @@
+{
+  "default_provider": "mock",
+  "agents": {
+    "LK-EXTRACT": "openai",
+    "LK-LAW": "openai",
+    "LK-REASON": "openai",
+    "LK-KURAL": "qwen",
+    "LK-EDITOR": "openai",
+    "LK-QA": "deepseek"
+  },
+  "rules": {
+    "allow_live_inference": false,
+    "require_explicit_provider": true,
+    "record_usage": true,
+    "record_request_id": true,
+    "store_api_keys": false
+  }
+}

@@ -31,3 +31,6 @@ coverage/
 # Local one-time setup scripts
 setup-*.sh
 .pytest_cache/
+
+# Allow the safe environment template
+!.env.example
