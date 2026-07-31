@@ -51,7 +51,13 @@ def test_publication_requires_qa_and_founder(tmp_path: Path) -> None:
     ]:
         refresh_readiness(plan)
         start_agent(plan, agent_id)
-        complete_agent(plan, agent_id, "AI-CEO", None)
+        complete_agent(
+            plan,
+            agent_id,
+            "AI-CEO",
+            None,
+            verdict="PASS" if agent_id == "LK-QA" else None,
+        )
 
     assert plan["publication"]["qa_status"] == "PASS"
     assert plan["publication"]["ready"] is False

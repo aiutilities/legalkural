@@ -95,6 +95,7 @@ def build_plan(case_id: str, case_root: Path) -> dict[str, Any]:
                 "started_at_utc": None,
                 "completed_at_utc": None,
                 "reviewed_by": None,
+                "verdict": None,
                 "notes": [],
             }
         )
@@ -141,9 +142,13 @@ def refresh_readiness(plan: dict[str, Any]) -> None:
             agent["status"] = "PENDING"
 
     qa = agents["LK-QA"]
-    plan["publication"]["qa_status"] = (
-        "PASS" if qa["status"] == "COMPLETE" else "PENDING"
-    )
+
+    if qa["status"] == "COMPLETE":
+        plan["publication"]["qa_status"] = qa.get("verdict") or "PENDING"
+    elif qa["status"] == "FAILED":
+        plan["publication"]["qa_status"] = "FAIL"
+    else:
+        plan["publication"]["qa_status"] = "PENDING"
     plan["publication"]["ready"] = (
         plan["publication"]["qa_status"] == "PASS"
         and plan["publication"]["founder_authorization"] == "AUTHORIZED"
@@ -185,6 +190,7 @@ def complete_agent(
     agent_id: str,
     reviewer: str,
     note: str | None,
+    verdict: str | None = None,
 ) -> None:
     agent = find_agent(plan, agent_id)
 
@@ -199,6 +205,7 @@ def complete_agent(
     agent["status"] = "COMPLETE"
     agent["completed_at_utc"] = utc_now()
     agent["reviewed_by"] = reviewer
+    agent["verdict"] = verdict
 
     if note:
         agent["notes"].append(note)
@@ -269,6 +276,7 @@ def build_parser() -> argparse.ArgumentParser:
     complete_parser.add_argument("--agent", required=True)
     complete_parser.add_argument("--reviewer", required=True)
     complete_parser.add_argument("--note")
+    complete_parser.add_argument("--verdict")
 
     fail_parser = sub.add_parser("fail")
     fail_parser.add_argument("--plan", type=Path, required=True)
@@ -310,6 +318,7 @@ def main() -> int:
                 args.agent,
                 args.reviewer,
                 args.note,
+                args.verdict,
             )
         elif args.command == "fail":
             fail_agent(plan, args.agent, args.note)
