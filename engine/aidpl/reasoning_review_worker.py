@@ -185,6 +185,340 @@ Rules:
     return system_prompt, user_prompt
 
 
+
+def _as_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def _pages(item: Any) -> list[int]:
+    if not isinstance(item, dict):
+        return []
+
+    values = (
+        item.get("source_pages")
+        or item.get("supporting_pages")
+        or item.get("pages")
+        or []
+    )
+
+    return [
+        value
+        for value in _as_list(values)
+        if isinstance(value, int)
+    ]
+
+
+def _text_item(item: Any) -> dict[str, Any] | None:
+    if isinstance(item, str):
+        cleaned = " ".join(item.split())
+        return {
+            "text": cleaned,
+            "source_pages": [],
+            "status": "MODEL_REVIEWED",
+        } if cleaned else None
+
+    if not isinstance(item, dict):
+        return None
+
+    value = (
+        item.get("text")
+        or item.get("question")
+        or item.get("conclusion")
+        or item.get("finding")
+        or item.get("usage")
+    )
+
+    if not value:
+        return None
+
+    return {
+        "text": " ".join(str(value).split()),
+        "source_pages": _pages(item),
+        "status": "MODEL_REVIEWED",
+    }
+
+
+def _collect_items(values: Any) -> list[dict[str, Any]]:
+    collected: list[dict[str, Any]] = []
+
+    for value in _as_list(values):
+        item = _text_item(value)
+        if item:
+            collected.append(item)
+
+    return collected
+
+
+def _deduplicate(
+    items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    seen: set[tuple[str, tuple[int, ...]]] = set()
+
+    for item in items:
+        key = (
+            item.get("text", ""),
+            tuple(item.get("source_pages", [])),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(item)
+
+    return result
+
+
+def normalize_reasoning_contract(
+    case_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    required = {
+        "schema_version",
+        "reference_case_id",
+        "status",
+        "issues",
+        "reasoning_steps",
+        "accepted_arguments",
+        "rejected_arguments",
+        "ratio_candidates",
+        "limitations",
+        "source_traceability",
+    }
+
+    if required.issubset(payload):
+        normalized = json.loads(json.dumps(payload))
+        normalized["reference_case_id"] = case_id
+        return normalized
+
+    normalized_issues: list[dict[str, Any]] = []
+    reasoning_steps: list[dict[str, Any]] = []
+    accepted: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    ratio: list[dict[str, Any]] = []
+    limitations: list[dict[str, Any]] = []
+
+    for index, issue in enumerate(
+        _as_list(payload.get("issues")),
+        start=1,
+    ):
+        if not isinstance(issue, dict):
+            continue
+
+        question = issue.get("question") or issue.get("text")
+        if question:
+            issue_no = issue.get("issue_no", index)
+            normalized_issues.append(
+                {
+                    "issue_id": (
+                        f"I{int(issue_no):03d}"
+                        if str(issue_no).isdigit()
+                        else f"I{index:03d}"
+                    ),
+                    "question": " ".join(str(question).split()),
+                    "source_pages": _pages(issue),
+                    "status": "MODEL_REVIEWED",
+                }
+            )
+
+        reasoning_steps.extend(
+            _collect_items(issue.get("analysis_steps"))
+        )
+        reasoning_steps.extend(
+            _collect_items(issue.get("court_findings"))
+        )
+        accepted.extend(
+            _collect_items(issue.get("accepted_arguments"))
+        )
+        rejected.extend(
+            _collect_items(issue.get("rejected_arguments"))
+        )
+        ratio.extend(
+            _collect_items(issue.get("ratio_candidates"))
+        )
+
+    reasoning_steps.extend(
+        _collect_items(payload.get("reasoning_steps"))
+    )
+    reasoning_steps.extend(
+        _collect_items(payload.get("analysis_steps"))
+    )
+    accepted.extend(
+        _collect_items(payload.get("accepted_arguments"))
+    )
+    rejected.extend(
+        _collect_items(payload.get("rejected_arguments"))
+    )
+    ratio.extend(
+        _collect_items(payload.get("ratio_candidates"))
+    )
+    limitations.extend(
+        _collect_items(payload.get("limitations"))
+    )
+    limitations.extend(
+        _collect_items(payload.get("scope_and_limitations"))
+    )
+
+    traceability: list[dict[str, Any]] = []
+
+    for category, items in [
+        ("issues", normalized_issues),
+        ("reasoning_steps", reasoning_steps),
+        ("accepted_arguments", accepted),
+        ("rejected_arguments", rejected),
+        ("ratio_candidates", ratio),
+        ("limitations", limitations),
+    ]:
+        for item in items:
+            traceability.append(
+                {
+                    "category": category,
+                    "source_pages": item.get("source_pages", []),
+                }
+            )
+
+    return {
+        "schema_version": "1.0",
+        "reference_case_id": case_id,
+        "status": "MODEL_REVIEWED_LIVE",
+        "issues": normalized_issues,
+        "reasoning_steps": _deduplicate(reasoning_steps),
+        "accepted_arguments": _deduplicate(accepted),
+        "rejected_arguments": _deduplicate(rejected),
+        "ratio_candidates": _deduplicate(ratio),
+        "limitations": _deduplicate(limitations),
+        "source_traceability": traceability,
+        "quality_notes": [
+            "OpenAI review normalized through AIDPL compatibility layer.",
+            "Original model output preserved in evidence.",
+        ],
+    }
+
+
+def normalize_decision_contract(
+    case_id: str,
+    payload: dict[str, Any],
+    reasoning: dict[str, Any],
+) -> dict[str, Any]:
+    required = {
+        "schema_version",
+        "reference_case_id",
+        "status",
+        "outcome",
+        "operative_directions",
+        "relief_granted",
+        "relief_denied",
+        "costs",
+        "limitations",
+        "source_traceability",
+    }
+
+    if required.issubset(payload):
+        normalized = json.loads(json.dumps(payload))
+        normalized["reference_case_id"] = case_id
+        return normalized
+
+    outcome = (
+        payload.get("outcome")
+        or payload.get("result")
+        or payload.get("disposition")
+    )
+
+    operative = _collect_items(
+        payload.get("operative_directions")
+        or payload.get("directions")
+        or payload.get("orders")
+        or payload.get("order")
+    )
+    granted = _collect_items(
+        payload.get("relief_granted")
+        or payload.get("granted_relief")
+    )
+    denied = _collect_items(
+        payload.get("relief_denied")
+        or payload.get("denied_relief")
+    )
+    limitations = _collect_items(
+        payload.get("limitations")
+        or payload.get("scope_and_limitations")
+    )
+
+    if not limitations:
+        limitations = list(reasoning.get("limitations", []))
+
+    if not outcome:
+        joined = " ".join(
+            item.get("text", "").lower()
+            for item in operative
+        )
+        if "allowed" in joined:
+            outcome = "Allowed"
+        elif "dismissed" in joined:
+            outcome = "Dismissed"
+        elif "disposed" in joined:
+            outcome = "Disposed"
+
+    if not granted:
+        granted = [
+            item for item in operative
+            if any(
+                word in item.get("text", "").lower()
+                for word in ("allowed", "quashed", "directed")
+            )
+        ]
+
+    if not denied:
+        denied = [
+            item for item in operative
+            if any(
+                word in item.get("text", "").lower()
+                for word in ("dismissed", "rejected", "denied")
+            )
+        ]
+
+    costs_value = payload.get("costs")
+    costs = (
+        str(costs_value)
+        if costs_value not in (None, "")
+        else None
+    )
+
+    traceability = []
+
+    for category, items in [
+        ("operative_directions", operative),
+        ("relief_granted", granted),
+        ("relief_denied", denied),
+        ("limitations", limitations),
+    ]:
+        for item in items:
+            traceability.append(
+                {
+                    "category": category,
+                    "source_pages": item.get("source_pages", []),
+                }
+            )
+
+    return {
+        "schema_version": "1.0",
+        "reference_case_id": case_id,
+        "status": "MODEL_REVIEWED_LIVE",
+        "outcome": outcome,
+        "operative_directions": _deduplicate(operative),
+        "relief_granted": _deduplicate(granted),
+        "relief_denied": _deduplicate(denied),
+        "costs": costs,
+        "limitations": _deduplicate(limitations),
+        "source_traceability": traceability,
+        "quality_notes": [
+            "OpenAI decision review normalized through AIDPL compatibility layer.",
+            "Original model output preserved in evidence.",
+        ],
+    }
+
 def run_review(
     case_id: str,
     case_root: Path,
@@ -272,6 +606,31 @@ def run_review(
             )
 
         reviewed = decode_live_review(response.structured)
+
+        write_json(
+            case_root
+            / "evidence/reasoning-model-raw-output.json",
+            {
+                "schema_version": "1.0",
+                "case_id": case_id,
+                "provider": response.provider,
+                "model": response.model,
+                "reasoning": reviewed["reasoning"],
+                "decision": reviewed["decision"],
+                "review_summary": reviewed["review_summary"],
+            },
+        )
+
+        reviewed["reasoning"] = normalize_reasoning_contract(
+            case_id,
+            reviewed["reasoning"],
+        )
+        reviewed["decision"] = normalize_decision_contract(
+            case_id,
+            reviewed["decision"],
+            reviewed["reasoning"],
+        )
+
         provider_metadata = {
             "provider": response.provider,
             "model": response.model,
