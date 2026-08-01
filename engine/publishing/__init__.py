@@ -1,0 +1,1 @@
+"""LegalKural publishing foundation."""

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version","asset_id","source","approval_status","title","alt_text","caption","description","created_by","created_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "asset_id": {"type": "string", "minLength": 1},
+    "source": {"enum": ["UPLOAD","AI_GENERATED"]},
+    "approval_status": {"enum": ["DRAFT","GENERATED","APPROVED","PUBLISHED"]},
+    "title": {"type": "string", "minLength": 1},
+    "alt_text": {"type": "string", "minLength": 1},
+    "caption": {"type": "string"},
+    "description": {"type": "string"},
+    "created_by": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "original_filename": {"type": ["string","null"]},
+    "mime_type": {"type": ["string","null"]},
+    "prompt_history": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": false
+}

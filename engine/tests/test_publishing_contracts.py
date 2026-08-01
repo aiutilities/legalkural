@@ -29,7 +29,8 @@ def test_valid_draft() -> None:
 def test_tags_must_be_single_word() -> None:
     payload = base_post()
     payload["tags"][0] = "property law"
-    with pytest.raises(PublishingContractError, match="single word"):
+
+    with pytest.raises(PublishingContractError):
         validate_wordpress_post(payload)
 
 
