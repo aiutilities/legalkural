@@ -41,10 +41,25 @@ def validate_schema(payload: dict[str, Any], schema_name: str) -> None:
 
 def categories() -> list[str]:
     payload = _read(CATEGORY_MASTER)
+
+    validate_schema(
+        payload,
+        "wordpress_category_master.schema.json",
+    )
+
+    if payload.get("status") != "FROZEN":
+        raise PublishingContractError(
+            "WordPress category master is not frozen."
+        )
+
     values = payload.get("categories")
+
     if not isinstance(values, list) or not values:
-        raise PublishingContractError("Category master is empty.")
-    return [str(value) for value in values]
+        raise PublishingContractError(
+            "WordPress category master is empty."
+        )
+
+    return [str(item) for item in values]
 
 
 def validate_tags(tags: list[str]) -> None:

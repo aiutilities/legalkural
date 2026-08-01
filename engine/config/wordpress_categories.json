@@ -1,6 +1,14 @@
 {
   "schema_version": "1.0",
-  "status": "PROVISIONAL_PENDING_FOUNDER_FREEZE",
+  "status": "FROZEN",
+  "version": "1.0.0",
+  "frozen_at": "2026-08-01",
+  "governance": {
+    "selection_rule": "EXACTLY_ONE",
+    "ai_generation_allowed": false,
+    "editor_override_allowed": true,
+    "change_policy": "VERSIONED_MIGRATION_ONLY"
+  },
   "categories": [
     "Constitutional Law",
     "Criminal Law",

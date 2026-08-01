@@ -70,3 +70,34 @@ def test_publish_requires_approved_image_when_selected() -> None:
     }
     with pytest.raises(PublishingContractError, match="approved"):
         validate_wordpress_post(payload)
+
+
+def test_category_master_is_frozen() -> None:
+    from publishing.contracts import (
+        CATEGORY_MASTER,
+        _read,
+        validate_schema,
+    )
+
+    payload = _read(CATEGORY_MASTER)
+
+    validate_schema(
+        payload,
+        "wordpress_category_master.schema.json",
+    )
+
+    assert payload["status"] == "FROZEN"
+    assert payload["governance"]["selection_rule"] == "EXACTLY_ONE"
+    assert payload["governance"]["ai_generation_allowed"] is False
+    assert payload["governance"]["change_policy"] == (
+        "VERSIONED_MIGRATION_ONLY"
+    )
+
+
+def test_category_master_has_no_duplicates() -> None:
+    from publishing.contracts import CATEGORY_MASTER, _read
+
+    payload = _read(CATEGORY_MASTER)
+    values = payload["categories"]
+
+    assert len(values) == len(set(values))
