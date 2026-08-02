@@ -197,6 +197,59 @@ class WordPressComClient:
 
         return result
 
+    def site_summary(self) -> dict[str, Any]:
+        # Return concise WordPress.com site connectivity details.
+        index = self.site()
+        routes = index.get("routes")
+
+        if not isinstance(routes, dict):
+            raise WordPressResponseError(
+                "WordPress.com site index is missing routes."
+            )
+
+        site_route = (
+            f"/wp/v2/sites/{self.config.site_identifier}"
+        )
+        route = routes.get(site_route)
+
+        if not isinstance(route, dict):
+            raise WordPressResponseError(
+                "Configured WordPress.com site route was not "
+                f"found: {site_route}"
+            )
+
+        methods = route.get("methods", [])
+        if not isinstance(methods, list):
+            methods = []
+
+        return {
+            "status": "CONNECTED",
+            "provider": "wordpress_com",
+            "site_identifier": (
+                self.config.site_identifier
+            ),
+            "api_base_url": (
+                self.config.api_base_url()
+            ),
+            "site_route": site_route,
+            "site_methods": methods,
+            "capabilities": {
+                "posts": (
+                    f"{site_route}/posts" in routes
+                ),
+                "categories": (
+                    f"{site_route}/categories" in routes
+                ),
+                "tags": (
+                    f"{site_route}/tags" in routes
+                ),
+                "media": (
+                    f"{site_route}/media" in routes
+                ),
+            },
+            "route_count": len(routes),
+        }
+
     def posts(
         self,
         **query: Any,

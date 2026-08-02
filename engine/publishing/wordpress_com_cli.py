@@ -79,6 +79,7 @@ def parser() -> argparse.ArgumentParser:
     sub.add_parser("logout")
     sub.add_parser("whoami")
     sub.add_parser("site")
+    sub.add_parser("site-raw")
 
     posts = sub.add_parser("posts")
     posts.add_argument(
@@ -170,8 +171,10 @@ def main() -> int:
     )
 
     if args.command == "whoami":
-        output = client.site()
+        output = client.site_summary()
     elif args.command == "site":
+        output = client.site_summary()
+    elif args.command == "site-raw":
         output = client.site()
     elif args.command == "posts":
         output = client.posts(
