@@ -7,6 +7,35 @@ from pathlib import Path
 
 from .wordpress_com_auth import WordPressComConfig
 from .wordpress_com_client import WordPressComClient
+from .wordpress_com_oauth import (
+    OAuthApplication,
+    delete_token,
+    load_token,
+    login,
+)
+
+
+TOKEN_PATH = Path(
+    os.environ.get(
+        "WORDPRESS_COM_TOKEN_FILE",
+        "generated/wordpress/oauth.json",
+    )
+)
+
+
+def resolved_access_token() -> str:
+    value = os.environ.get(
+        "WORDPRESS_COM_ACCESS_TOKEN",
+        "",
+    ).strip()
+
+    if value:
+        return value
+
+    if TOKEN_PATH.exists():
+        return load_token(TOKEN_PATH).access_token
+
+    return ""
 
 
 def config_from_environment() -> WordPressComConfig:
@@ -15,10 +44,7 @@ def config_from_environment() -> WordPressComConfig:
             "WORDPRESS_COM_SITE_IDENTIFIER",
             "",
         ),
-        access_token=os.environ.get(
-            "WORDPRESS_COM_ACCESS_TOKEN",
-            "",
-        ),
+        access_token=resolved_access_token(),
         timeout_seconds=float(
             os.environ.get(
                 "WORDPRESS_TIMEOUT_SECONDS",
@@ -44,6 +70,14 @@ def parser() -> argparse.ArgumentParser:
         required=True,
     )
 
+    login_parser = sub.add_parser("login")
+    login_parser.add_argument(
+        "--no-browser",
+        action="store_true",
+    )
+
+    sub.add_parser("logout")
+    sub.add_parser("whoami")
     sub.add_parser("site")
 
     posts = sub.add_parser("posts")
@@ -71,11 +105,73 @@ def read_payload(path: Path) -> dict:
 
 def main() -> int:
     args = parser().parse_args()
+
+    if args.command == "login":
+        client_id = os.environ.get(
+            "WORDPRESS_COM_CLIENT_ID",
+            "",
+        ).strip()
+        client_secret = os.environ.get(
+            "WORDPRESS_COM_CLIENT_SECRET",
+            "",
+        ).strip()
+        redirect_uri = os.environ.get(
+            "WORDPRESS_COM_REDIRECT_URI",
+            "http://localhost:8080/callback",
+        ).strip()
+
+        if not client_id or not client_secret:
+            raise SystemExit(
+                "ERROR: Set WORDPRESS_COM_CLIENT_ID "
+                "and WORDPRESS_COM_CLIENT_SECRET."
+            )
+
+        token = login(
+            OAuthApplication(
+                client_id=client_id,
+                client_secret=client_secret,
+                redirect_uri=redirect_uri,
+            ),
+            TOKEN_PATH,
+            open_browser=not args.no_browser,
+        )
+        print(
+            json.dumps(
+                {
+                    "status": "AUTHENTICATED",
+                    "token_file": str(TOKEN_PATH),
+                    "blog_id": token.blog_id,
+                    "blog_url": token.blog_url,
+                },
+                indent=2,
+            )
+        )
+        return 0
+
+    if args.command == "logout":
+        removed = delete_token(TOKEN_PATH)
+        print(
+            json.dumps(
+                {
+                    "status": (
+                        "LOGGED_OUT"
+                        if removed
+                        else "NO_TOKEN"
+                    ),
+                    "token_file": str(TOKEN_PATH),
+                },
+                indent=2,
+            )
+        )
+        return 0
+
     client = WordPressComClient(
         config_from_environment()
     )
 
-    if args.command == "site":
+    if args.command == "whoami":
+        output = client.site()
+    elif args.command == "site":
         output = client.site()
     elif args.command == "posts":
         output = client.posts(
