@@ -271,14 +271,60 @@ AFFIRMATIVE_FINDING_MARKERS = (
 
 
 def is_actionable_finding(finding: str) -> bool:
-    """Return False for affirmative QA observations that require no repair."""
+    """Return True only when a QA observation requires actual remediation."""
     lowered = finding.lower()
 
-    return not any(
-        marker in lowered
-        for marker in AFFIRMATIVE_FINDING_MARKERS
+    # Explicit affirmative/negated observations are evidence, not work.
+    non_actionable_phrases = (
+        "no contradiction detected",
+        "no contradiction",
+        "no distortion detected",
+        "no invented facts detected",
+        "consistently captured and correct",
+        "substantive content appears coherent",
+        "not a legal defect",
+        "not a substantive defect",
     )
 
+    if any(phrase in lowered for phrase in non_actionable_phrases):
+        return False
+
+    affirmative_markers = AFFIRMATIVE_FINDING_MARKERS + (
+        "appears coherent",
+        "acceptable",
+    )
+
+    strong_defect_markers = (
+        "inconsistency",
+        "incorrect",
+        "unsupported",
+        "missing required",
+        "does not exist",
+        "not supported",
+        "must be corrected",
+        "requires correction",
+        "mis-citation",
+        "mis-cited",
+    )
+
+    if any(marker in lowered for marker in affirmative_markers):
+        if not any(marker in lowered for marker in strong_defect_markers):
+            return False
+
+    optional_markers = (
+        "consider populating",
+        "consider adding",
+        "advisable to",
+        "may consider",
+        "could consider",
+        "for completeness",
+    )
+
+    if any(marker in lowered for marker in optional_markers):
+        if not any(marker in lowered for marker in strong_defect_markers):
+            return False
+
+    return True
 
 def route_finding(finding: str) -> tuple[str, str | None]:
     """Classify a finding and choose its earliest true remediation owner."""
@@ -288,6 +334,91 @@ def route_finding(finding: str) -> tuple[str, str | None]:
         return classification, None
 
     lowered = finding.lower()
+
+    # A source anomaly means the questionable text originates in the
+    # authoritative source itself. Preserve that classification while
+    # still routing it to the earliest upstream stage able to verify it.
+    if classification == "SOURCE_ANOMALY":
+        owner = source_anomaly_owner(finding)
+        if owner is None:
+            owner = owner_for_finding(finding)
+        return classification, owner
+
+    # Domain ownership outranks incidental wording such as
+    # "editorial note" when the actual defect is upstream.
+    legal_domain_markers = (
+        "article 19",
+        "constitutional citation",
+        "statute",
+        "section ",
+        "regulation",
+        "legal authority",
+        "law artifact",
+        "law.json",
+        "precedent",
+    )
+    legal_problem_markers = (
+        "incorrect",
+        "mis-citation",
+        "mis-cited",
+        "not a valid",
+        "does not exist",
+        "verify",
+        "verification",
+        "questionable",
+    )
+
+    if (
+        any(marker in lowered for marker in legal_domain_markers)
+        and any(marker in lowered for marker in legal_problem_markers)
+    ):
+        return "LEGAL_FIDELITY_ERROR", "LK-LAW"
+
+    reason_domain_markers = (
+        "decision",
+        "operative direction",
+        "relief",
+        "electricity tariff",
+        "binding direction",
+    )
+    reason_problem_markers = (
+        "verify",
+        "verification",
+        "unsupported",
+        "over-breadth",
+        "overbreadth",
+        "not clearly supported",
+    )
+
+    if (
+        any(marker in lowered for marker in reason_domain_markers)
+        and any(marker in lowered for marker in reason_problem_markers)
+    ):
+        return "TRACEABILITY_GAP", "LK-REASON"
+
+    extract_domain_markers = (
+        "metadata",
+        "case number",
+        "case numbering",
+        "wp year",
+        "w.p.no",
+        "advocates mapping",
+    )
+    extract_problem_markers = (
+        "inconsistency",
+        "mismatch",
+        "conflict",
+        "reconcile",
+        "harmonize",
+        "harmonise",
+        "verify",
+    )
+
+    if (
+        any(marker in lowered for marker in extract_domain_markers)
+        and any(marker in lowered for marker in extract_problem_markers)
+    ):
+        return "LEGAL_FIDELITY_ERROR", "LK-EXTRACT"
 
     upstream_defect_markers = (
         "missing",
@@ -329,11 +460,6 @@ def route_finding(finding: str) -> tuple[str, str | None]:
 
     if classification == "EDITORIAL":
         return classification, "LK-EDITOR"
-
-    if classification == "SOURCE_ANOMALY":
-        owner = source_anomaly_owner(finding)
-        if owner is not None:
-            return classification, owner
 
     return classification, owner_for_finding(finding)
 

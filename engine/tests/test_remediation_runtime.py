@@ -258,3 +258,68 @@ def test_source_anomaly_uses_upstream_owner_when_known() -> None:
 
     assert classification == "SOURCE_ANOMALY"
     assert owner == "LK-LAW"
+
+
+def test_positive_core_consistency_is_not_actionable() -> None:
+    assert not is_actionable_finding(
+        "End-use/recipient-perspective test, statutory definitions, "
+        "natural justice holding and batch-limitation are consistent "
+        "across Facts, Issues, Reasoning, Decision and Article with "
+        "page traceability. No contradiction detected on those cores."
+    )
+
+
+def test_correct_decision_limitation_is_not_actionable() -> None:
+    assert not is_actionable_finding(
+        "decision.json [REVIEW_REQUIRED]: Batch limitation and "
+        "end-use qualification are consistently captured and correct."
+    )
+
+
+def test_optional_bench_completion_is_not_actionable() -> None:
+    assert not is_actionable_finding(
+        "metadata.json [REVIEW_REQUIRED]: Bench is null but article "
+        "identifies Single Judge. Not a legal defect, but consider "
+        "populating 'bench' if the source records it explicitly."
+    )
+
+
+def test_coherent_statutory_revalidation_is_not_actionable() -> None:
+    assert not is_actionable_finding(
+        "law.json [REVIEW_REQUIRED]: Section references for municipal "
+        "definitions appear coherent with the reasoning; still advisable "
+        "to re-validate against the quoted definitions."
+    )
+
+
+def test_article19_routes_to_law_despite_editorial_note_wording() -> None:
+    classification, owner = route_finding(
+        "Potential mis-citation of Constitution: References to "
+        "Article 19(1)(8) appear in the Law artifact. This needs "
+        "verification against the judgment and, if it is a typo, "
+        "a clarifying editorial note."
+    )
+
+    assert classification == "LEGAL_FIDELITY_ERROR"
+    assert owner == "LK-LAW"
+
+
+def test_electricity_direction_routes_to_reason() -> None:
+    classification, owner = route_finding(
+        "Scope of operative direction to electricity tariff: "
+        "verify from the judgment that this was a binding direction."
+    )
+
+    assert classification == "TRACEABILITY_GAP"
+    assert owner == "LK-REASON"
+
+
+def test_wp_year_mismatch_routes_to_extract() -> None:
+    classification, owner = route_finding(
+        "Metadata case numbering inconsistency: W.P.Nos.31337 and "
+        "31342 show 2024 in advocates mapping but 2025 elsewhere; "
+        "verify and harmonize."
+    )
+
+    assert classification == "LEGAL_FIDELITY_ERROR"
+    assert owner == "LK-EXTRACT"
