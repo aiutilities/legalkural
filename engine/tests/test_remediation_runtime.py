@@ -646,3 +646,300 @@ def test_compound_finding_without_source_keeps_all_concerns() -> None:
         "LK-REASON",
     ]
     assert plan["earliest_owner"] == "LK-EXTRACT"
+
+
+
+def test_duplicate_wp_year_findings_collapse_to_one_work_item() -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Inconsistency in WP years: W.P.Nos.31337 & 31342 "
+                "show 2024 in advocates mapping but 2025 elsewhere."
+            ),
+        ],
+        "artifact_findings": [
+            {
+                "artifact": "metadata",
+                "status": "REVIEW_REQUIRED",
+                "findings": [
+                    (
+                        "Advocates mapping lists W.P.Nos.31337 & 31342 "
+                        "as 2024 while case numbers list them as 2025; "
+                        "verify and harmonize."
+                    ),
+                ],
+            },
+            {
+                "artifact": "article_markdown",
+                "status": "REVIEW_REQUIRED",
+                "findings": [
+                    (
+                        "Resolve the WP year inconsistency for "
+                        "31337 and 31342: 2024 vs 2025."
+                    ),
+                ],
+            },
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    matches = [
+        item
+        for item in plan["work_items"]
+        if (
+            "31337" in item["finding"]
+            or "31342" in item["finding"]
+            or "wp year" in item["finding"].lower()
+        )
+    ]
+
+    assert len(matches) == 1
+    assert matches[0]["owner"] == "LK-EXTRACT"
+
+
+def test_duplicate_article_19_findings_collapse_to_one_work_item() -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Potential mis-citation of Constitution: Article 19(1)(8) "
+                "is not a valid sub-clause and requires verification."
+            ),
+        ],
+        "artifact_findings": [
+            {
+                "artifact": "law",
+                "status": "REVIEW_REQUIRED",
+                "findings": [
+                    (
+                        "Article 19(1)(8) is not a valid provision; "
+                        "verify the judgment text."
+                    ),
+                ],
+            },
+            {
+                "artifact": "article_markdown",
+                "status": "REVIEW_REQUIRED",
+                "findings": [
+                    (
+                        "Add a brief note if Article 19(1)(8) is a "
+                        "typographical slip."
+                    ),
+                ],
+            },
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    matches = [
+        item
+        for item in plan["work_items"]
+        if "19(1)(8)" in item["finding"]
+    ]
+
+    assert len(matches) == 1
+    assert matches[0]["owner"] == "LK-LAW"
+
+
+def test_dedup_does_not_merge_distinct_legal_concerns() -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Article 19(1)(8) is not a valid constitutional "
+                "provision and requires verification."
+            ),
+            (
+                "Tamil Nadu Urban Local Bodies Act section citation "
+                "appears incorrect and requires verification."
+            ),
+            (
+                "WP year inconsistency for W.P.No.31337: "
+                "2024 versus 2025; reconcile."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 3
+
+    owners = [item["owner"] for item in plan["work_items"]]
+    assert owners.count("LK-LAW") == 2
+    assert owners.count("LK-EXTRACT") == 1
+
+
+def test_source_confirmed_electricity_stays_suppressed_after_dedup(
+    tmp_path,
+) -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "The Court directs that electricity charges shall be "
+            "collected only at the residential tariff."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Verify the electricity-tariff operative direction "
+                "as a binding direction."
+            ),
+            (
+                "Article 19(1)(8) is not a valid provision; verify."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert not any(
+        "electricity" in item["finding"].lower()
+        for item in plan["work_items"]
+    )
+
+    assert any(
+        "19(1)(8)" in item["finding"]
+        for item in plan["work_items"]
+    )
+
+
+def test_duplicate_human_findings_remain_human_only() -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            "Tamil couplet requires human language and cultural review.",
+        ],
+        "artifact_findings": [
+            {
+                "artifact": "kural",
+                "status": "REVIEW_REQUIRED",
+                "findings": [
+                    (
+                        "Tamil couplet requires human Tamil language "
+                        "review before publication."
+                    ),
+                ],
+            },
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert plan["work_items"] == []
+    assert plan["requires_human_review"] is True
+    assert len(plan["human_review_items"]) >= 1
+
+    assert all(
+        item["owner"] is None
+        and item["classification"] == "HUMAN_REVIEW_REQUIRED"
+        for item in plan["human_review_items"]
+    )
+
+
+def test_remediation_ids_are_contiguous_after_deduplication() -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "WP year inconsistency for W.P.No.31337: "
+                "2024 versus 2025; reconcile."
+            ),
+            (
+                "Metadata case numbering inconsistency for 31337: "
+                "2024 versus 2025; harmonize."
+            ),
+            (
+                "Article 19(1)(8) is not a valid provision; verify."
+            ),
+            (
+                "Article 19(1)(8) does not exist as a valid "
+                "constitutional sub-clause; verification required."
+            ),
+            "Tamil couplet requires human language review.",
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    all_items = (
+        plan["work_items"]
+        + plan["human_review_items"]
+    )
+
+    ids = [item["work_item_id"] for item in all_items]
+
+    assert ids == [
+        f"REM-{number:03d}"
+        for number in range(1, len(ids) + 1)
+    ]
+
+    assert len(plan["work_items"]) == 2
+    assert len(plan["human_review_items"]) == 1
+
+
+
+def test_article19_dedup_uses_canonical_owner_regardless_of_order() -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "article_markdown [REVIEW_REQUIRED]: add a brief note "
+                "if the Article 19(1)(8) reference in the judgment is "
+                "a typographical slip. These are upstream fidelity "
+                "clarifications, not rewrites of substance."
+            ),
+            (
+                "Potential mis-citation of Constitution: Article 19(1)(8) "
+                "is not a valid sub-clause and requires verification."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    matches = [
+        item
+        for item in plan["work_items"]
+        if "19(1)(8)" in item["finding"]
+    ]
+
+    assert len(matches) == 1
+    assert matches[0]["classification"] == "LEGAL_FIDELITY_ERROR"
+    assert matches[0]["owner"] == "LK-LAW"
+    assert plan["owners"] == ["LK-LAW"]
+    assert plan["earliest_owner"] == "LK-LAW"

@@ -615,6 +615,92 @@ def decompose_finding(finding: str) -> list[str]:
     return parts or [finding]
 
 
+def remediation_fingerprint(
+    finding: str,
+    classification: str,
+    owner: str | None,
+) -> tuple[str, str | None, str]:
+    """Return a conservative fingerprint for known duplicate QA concerns.
+
+    Only well-defined legal concerns are canonicalized here. Unknown findings
+    retain their normalized full text so distinct legal issues are never
+    collapsed merely because they use similar wording.
+    """
+    import re
+
+    normalized = " ".join(
+        finding.lower()
+        .replace("-", " ")
+        .replace("–", " ")
+        .replace("—", " ")
+        .split()
+    )
+
+    # WP/case-year inconsistency can be reported independently by the global
+    # QA review, metadata review and article review. They represent the same
+    # upstream extraction defect.
+    wp_year_markers = (
+        "wp year",
+        "case year",
+        "case numbering",
+        "31337",
+        "31342",
+        "advocates mapping",
+    )
+    wp_problem_markers = (
+        "inconsistency",
+        "mismatch",
+        "2024",
+        "2025",
+        "harmonize",
+        "harmonise",
+        "reconcile",
+    )
+
+    if (
+        any(marker in normalized for marker in wp_year_markers)
+        and any(marker in normalized for marker in wp_problem_markers)
+    ):
+        return (
+            "LEGAL_FIDELITY_ERROR",
+            "LK-EXTRACT",
+            "case-number-year-inconsistency",
+        )
+
+    # The Article 19(1)(8) concern can likewise appear in the global QA,
+    # Law artifact review and decomposed Article review. It is one legal
+    # citation/source-anomaly concern, not three remediation jobs.
+    if (
+        "article 19(1)(8)" in normalized
+        or re.search(r"\b19\s*\(\s*1\s*\)\s*\(\s*8\s*\)", normalized)
+    ):
+        citation_problem_markers = (
+            "not a valid",
+            "does not exist",
+            "incorrect",
+            "mis citation",
+            "verify",
+            "verification",
+            "typographical",
+            "typo",
+            "likely error",
+            "likely incorrect",
+        )
+
+        if any(
+            marker in normalized
+            for marker in citation_problem_markers
+        ):
+            return (
+                "LEGAL_FIDELITY_ERROR",
+                "LK-LAW",
+                "constitution-article-19-1-8",
+            )
+
+    # Fail conservative: unrelated findings remain distinct.
+    return classification, owner, normalized
+
+
 def build_remediation_plan(
     case_id: str,
     qa_report: dict[str, Any],
@@ -631,6 +717,7 @@ def build_remediation_plan(
     human_review_items: list[dict[str, Any]] = []
 
     item_number = 0
+    seen_fingerprints: set[tuple[str, str | None, str]] = set()
 
     for finding in findings:
         if not is_actionable_finding(finding):
@@ -640,6 +727,16 @@ def build_remediation_plan(
             continue
 
         classification, owner = route_finding(finding)
+
+        fingerprint = remediation_fingerprint(
+            finding,
+            classification,
+            owner,
+        )
+        if fingerprint in seen_fingerprints:
+            continue
+        seen_fingerprints.add(fingerprint)
+
         item_number += 1
 
         item = {
