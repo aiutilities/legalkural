@@ -615,6 +615,117 @@ def decompose_finding(finding: str) -> list[str]:
     return parts or [finding]
 
 
+def source_anomaly_semantics(
+    finding: str,
+    classification: str,
+    owner: str | None,
+    source_text: str,
+) -> tuple[str, str | None]:
+    """Promote a concern to SOURCE_ANOMALY only when source proves it.
+
+    A generated-artifact defect must not be relabelled as a source anomaly
+    merely because its wording resembles one.
+    """
+    import re
+
+    if not source_text:
+        return classification, owner
+
+    def normalize(value: str) -> str:
+        return " ".join(
+            value.lower()
+            .replace("-", " ")
+            .replace("–", " ")
+            .replace("—", " ")
+            .split()
+        )
+
+    normalized_finding = normalize(finding)
+    normalized_source = normalize(source_text)
+
+    # --------------------------------------------------------
+    # Case-number/year source inconsistency.
+    #
+    # Promote only when the authoritative source itself contains
+    # both year variants for the implicated WP numbers.
+    # --------------------------------------------------------
+    wp_finding = (
+        (
+            "31337" in normalized_finding
+            or "31342" in normalized_finding
+        )
+        and any(
+            marker in normalized_finding
+            for marker in (
+                "2024",
+                "2025",
+                "year",
+                "inconsistency",
+                "mismatch",
+                "harmonize",
+                "harmonise",
+                "reconcile",
+            )
+        )
+    )
+
+    source_has_wp_2024 = bool(
+        re.search(
+            r"(?:31337|31342).{0,100}2024",
+            normalized_source,
+        )
+    )
+
+    source_has_wp_2025 = bool(
+        re.search(
+            r"(?:31337|31342).{0,100}2025",
+            normalized_source,
+        )
+    )
+
+    if (
+        wp_finding
+        and source_has_wp_2024
+        and source_has_wp_2025
+    ):
+        return "SOURCE_ANOMALY", "LK-EXTRACT"
+
+    # --------------------------------------------------------
+    # Article 19(1)(8) source anomaly.
+    #
+    # If the authoritative source itself contains 19(1)(8),
+    # preserve it faithfully rather than silently guessing a
+    # replacement constitutional provision.
+    # --------------------------------------------------------
+    article_19_pattern = (
+        r"\b19\s*\(\s*1\s*\)\s*\(\s*8\s*\)"
+    )
+
+    finding_has_article_19_1_8 = bool(
+        "article 19(1)(8)" in normalized_finding
+        or re.search(
+            article_19_pattern,
+            normalized_finding,
+        )
+    )
+
+    source_has_article_19_1_8 = bool(
+        "article 19(1)(8)" in normalized_source
+        or re.search(
+            article_19_pattern,
+            normalized_source,
+        )
+    )
+
+    if (
+        finding_has_article_19_1_8
+        and source_has_article_19_1_8
+    ):
+        return "SOURCE_ANOMALY", "LK-LAW"
+
+    return classification, owner
+
+
 def remediation_fingerprint(
     finding: str,
     classification: str,
@@ -727,6 +838,13 @@ def build_remediation_plan(
             continue
 
         classification, owner = route_finding(finding)
+
+        classification, owner = source_anomaly_semantics(
+            finding,
+            classification,
+            owner,
+            source_text,
+        )
 
         fingerprint = remediation_fingerprint(
             finding,

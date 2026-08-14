@@ -943,3 +943,173 @@ def test_article19_dedup_uses_canonical_owner_regardless_of_order() -> None:
     assert matches[0]["owner"] == "LK-LAW"
     assert plan["owners"] == ["LK-LAW"]
     assert plan["earliest_owner"] == "LK-LAW"
+
+
+
+def test_wp_year_concern_becomes_source_anomaly_when_source_contains_both_years(
+    tmp_path,
+) -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "W.P.No.31337 of 2024 appears in one portion of the judgment. "
+            "W.P.No.31337 of 2025 appears in another portion."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Inconsistency in WP years: W.P.No.31337 appears as "
+                "2024 and 2025. Verify and reconcile."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert len(plan["work_items"]) == 1
+
+    item = plan["work_items"][0]
+
+    assert item["classification"] == "SOURCE_ANOMALY"
+    assert item["owner"] == "LK-EXTRACT"
+    assert plan["owners"] == ["LK-EXTRACT"]
+    assert plan["earliest_owner"] == "LK-EXTRACT"
+
+
+def test_wp_year_concern_stays_fidelity_error_without_source_conflict(
+    tmp_path,
+) -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        "W.P.No.31337 of 2025.",
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Inconsistency in WP years: metadata lists "
+                "W.P.No.31337 as 2024 while the article lists 2025."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert len(plan["work_items"]) == 1
+
+    item = plan["work_items"][0]
+
+    assert item["classification"] == "LEGAL_FIDELITY_ERROR"
+    assert item["owner"] == "LK-EXTRACT"
+
+
+def test_article_19_1_8_becomes_source_anomaly_when_present_in_source(
+    tmp_path,
+) -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "The judgment records the contention under "
+            "Article 19(1)(8) of the Constitution."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Article 19(1)(8) is not a valid constitutional "
+                "provision and requires verification."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert len(plan["work_items"]) == 1
+
+    item = plan["work_items"][0]
+
+    assert item["classification"] == "SOURCE_ANOMALY"
+    assert item["owner"] == "LK-LAW"
+    assert plan["owners"] == ["LK-LAW"]
+    assert plan["earliest_owner"] == "LK-LAW"
+
+
+def test_article_19_1_8_stays_fidelity_error_when_absent_from_source(
+    tmp_path,
+) -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "The judgment discusses Article 19(1)(g) "
+            "of the Constitution."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Article 19(1)(8) is not a valid constitutional "
+                "provision and requires verification."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert len(plan["work_items"]) == 1
+
+    item = plan["work_items"][0]
+
+    assert item["classification"] == "LEGAL_FIDELITY_ERROR"
+    assert item["owner"] == "LK-LAW"
