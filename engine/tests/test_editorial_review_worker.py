@@ -103,9 +103,54 @@ def test_normalize_article_structure() -> None:
     assert normalized.startswith("# Fallback Title")
     assert "Publication status" in normalized
     assert "## Case Snapshot" in normalized
-    assert "## What Is the Case About?" in normalized
+    assert "## What Is the Case About?" not in normalized
     assert "## How the Judge Reasoned" in normalized
     assert "## The Decision" in normalized
     assert "## Editorial Disclaimer" in normalized
     assert "not an authentic" in normalized.lower()
     assert "not personalised legal advice" in normalized.lower()
+
+
+def test_normalizer_does_not_invent_substantive_sections() -> None:
+    from aidpl.editorial_review_worker import (
+        normalize_article_structure,
+    )
+
+    article = """# Test Case
+
+## Case Snapshot
+
+Verified snapshot.
+
+## Editorial Disclaimer
+
+This is not personalised legal advice.
+"""
+
+    normalized = normalize_article_structure(
+        article,
+        "Fallback Title",
+    )
+
+    assert "## What Is the Case About?" not in normalized
+    assert "## How the Judge Reasoned" not in normalized
+    assert "## The Decision" not in normalized
+
+    assert "This section requires editorial confirmation" not in normalized
+    assert "The reasoning must be read with the verified reasoning artifact" not in normalized
+    assert "The operative result must be verified against the decision artifact" not in normalized
+
+    blockers = validate_article(normalized)
+
+    assert any(
+        "## What Is the Case About?" in blocker
+        for blocker in blockers
+    )
+    assert any(
+        "## How the Judge Reasoned" in blocker
+        for blocker in blockers
+    )
+    assert any(
+        "## The Decision" in blocker
+        for blocker in blockers
+    )

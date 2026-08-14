@@ -145,28 +145,6 @@ def normalize_article_structure(
             "editorial work. It is not an authentic Thirukkural verse.\n"
         )
 
-    if "## Case Snapshot" not in normalized:
-        normalized += "\n\n## Case Snapshot\n\nSee the verified case details above.\n"
-
-    if "## What Is the Case About?" not in normalized:
-        normalized += (
-            "\n\n## What Is the Case About?\n\n"
-            "This section requires editorial confirmation against the "
-            "verified facts and issues.\n"
-        )
-
-    if "## How the Judge Reasoned" not in normalized:
-        normalized += (
-            "\n\n## How the Judge Reasoned\n\n"
-            "The reasoning must be read with the verified reasoning artifact.\n"
-        )
-
-    if "## The Decision" not in normalized:
-        normalized += (
-            "\n\n## The Decision\n\n"
-            "The operative result must be verified against the decision artifact.\n"
-        )
-
     if "## Editorial Disclaimer" not in normalized:
         normalized += (
             "\n\n## Editorial Disclaimer\n\n"

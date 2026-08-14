@@ -165,7 +165,10 @@ Rules:
 6. A PASS means the package is safe to move to Founder review, not automatic publication.
 7. Return FAIL only for material legal or structural defects.
 8. Return REVIEW_REQUIRED for unresolved legal, Tamil, traceability or factual concerns.
-9. Never approve publication directly.
+9. Classify defects by their earliest true source. If an article exposes a missing, placeholder, incomplete, contradictory or unsupported upstream fact, issue, evidence item, authority, reasoning step or decision field, report the upstream source defect rather than describing it only as an editorial defect.
+10. Do not treat an editorial placeholder as proof that LK-EDITOR owns the defect. Identify the earliest artifact that lacks the verified substance needed to replace the placeholder.
+11. Reserve editorial findings for presentation, structure, wording or readability defects where the required verified substance already exists upstream.
+12. Never approve publication directly.
 """
 
     user_prompt = json.dumps(

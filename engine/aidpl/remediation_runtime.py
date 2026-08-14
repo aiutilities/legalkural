@@ -73,7 +73,12 @@ def flatten_findings(report: dict[str, Any]) -> list[str]:
             continue
 
         name = str(artifact.get("artifact") or "artifact")
-        status = str(artifact.get("status") or "")
+        status = str(artifact.get("status") or "").upper()
+
+        # PASS is evidence, not remediation work.
+        if status == "PASS":
+            continue
+
         for item in artifact.get("findings", []):
             if isinstance(item, str):
                 findings.append(f"{name} [{status}]: {item}")
@@ -81,7 +86,161 @@ def flatten_findings(report: dict[str, Any]) -> list[str]:
     return findings
 
 
+SOURCE_ANOMALY_RULES = [
+    (
+        "LK-EXTRACT",
+        [
+            "source artifact",
+            "source data",
+            "source record",
+            "metadata",
+            "timeline",
+            "material fact",
+            "verified fact",
+            "evidence item",
+            "source page",
+            "traceability",
+        ],
+    ),
+    (
+        "LK-LAW",
+        [
+            "legal authority",
+            "legal framework",
+            "statute",
+            "precedent",
+            "case law",
+            "section",
+            "regulation",
+            "notification",
+        ],
+    ),
+    (
+        "LK-REASON",
+        [
+            "reasoning artifact",
+            "reasoning step",
+            "ratio",
+            "holding",
+            "finding",
+            "decision artifact",
+            "operative direction",
+            "relief",
+            "outcome",
+        ],
+    ),
+    (
+        "LK-KURAL",
+        [
+            "kural brief",
+            "tamil kural",
+            "thirukkural",
+        ],
+    ),
+]
+
+
+FINDING_CLASSIFICATIONS = {
+    "LEGAL_FIDELITY_ERROR",
+    "SOURCE_ANOMALY",
+    "EDITORIAL",
+    "TRACEABILITY_GAP",
+    "HUMAN_REVIEW_REQUIRED",
+}
+
+
+def classify_finding(finding: str) -> str:
+    """Classify a QA finding for remediation routing."""
+    lowered = finding.lower()
+
+    human_markers = (
+        "human review",
+        "human language",
+        "human tamil",
+        "cultural review",
+        "requires human",
+        "tamil couplet",
+    )
+    if any(marker in lowered for marker in human_markers):
+        return "HUMAN_REVIEW_REQUIRED"
+
+    traceability_markers = (
+        "traceability",
+        "source-page mapping",
+        "source page mapping",
+        "page-level",
+        "page level",
+        "source hook",
+    )
+    if any(marker in lowered for marker in traceability_markers):
+        return "TRACEABILITY_GAP"
+
+    source_anomaly_markers = (
+        "quoted verbatim",
+        "as recorded in the judgment",
+        "source inconsistency",
+        "source anomaly",
+        "source typo",
+        "likely error",
+        "likely incorrect",
+    )
+    if any(marker in lowered for marker in source_anomaly_markers):
+        return "SOURCE_ANOMALY"
+
+    editorial_markers = (
+        "article.md",
+        "article markdown",
+        "article heading",
+        "article section",
+        "article contains",
+        "article ends",
+        "editorial",
+        "heading",
+        "placeholder",
+        "readability",
+        "wording",
+        "disclaimer",
+        "publication status",
+    )
+    if any(marker in lowered for marker in editorial_markers):
+        return "EDITORIAL"
+
+    return "LEGAL_FIDELITY_ERROR"
+
+
+def source_anomaly_owner(finding: str) -> str | None:
+    """Return the earliest upstream owner explicitly implicated by a finding."""
+    lowered = finding.lower()
+
+    anomaly_markers = [
+        "missing",
+        "placeholder",
+        "incomplete",
+        "unsupported",
+        "contradict",
+        "conflict",
+        "absent",
+        "not established",
+        "not supported",
+        "cannot be verified",
+        "requires verification",
+    ]
+
+    if not any(marker in lowered for marker in anomaly_markers):
+        return None
+
+    for stage, markers in SOURCE_ANOMALY_RULES:
+        if any(marker in lowered for marker in markers):
+            return stage
+
+    return None
+
+
 def owner_for_finding(finding: str) -> str:
+    source_owner = source_anomaly_owner(finding)
+    if source_owner is not None:
+        return source_owner
+
     lowered = finding.lower()
     scores = {
         stage: sum(
@@ -95,6 +254,90 @@ def owner_for_finding(finding: str) -> str:
     return best_stage if scores[best_stage] else "LK-EDITOR"
 
 
+
+AFFIRMATIVE_FINDING_MARKERS = (
+    "internally consistent",
+    "faithfully reflects",
+    "fairly characterized",
+    "fairly characterised",
+    "coherently carried",
+    "correctly flagged",
+    "correctly identifies",
+    "correctly states",
+    "is traceable",
+    "are traceable",
+    "no legal advice offered",
+)
+
+
+def is_actionable_finding(finding: str) -> bool:
+    """Return False for affirmative QA observations that require no repair."""
+    lowered = finding.lower()
+
+    return not any(
+        marker in lowered
+        for marker in AFFIRMATIVE_FINDING_MARKERS
+    )
+
+
+def route_finding(finding: str) -> tuple[str, str | None]:
+    """Classify a finding and choose its earliest true remediation owner."""
+    classification = classify_finding(finding)
+
+    if classification == "HUMAN_REVIEW_REQUIRED":
+        return classification, None
+
+    lowered = finding.lower()
+
+    upstream_defect_markers = (
+        "missing",
+        "incomplete",
+        "contradictory",
+        "unsupported",
+        "unverified",
+        "not verified",
+        "lacks",
+        "lack of",
+    )
+
+    upstream_artifact_markers = (
+        "fact",
+        "issue",
+        "evidence",
+        "source",
+        "authority",
+        "law",
+        "reasoning",
+        "decision",
+        "operative direction",
+        "relief",
+        "outcome",
+    )
+
+    has_upstream_defect = any(
+        marker in lowered for marker in upstream_defect_markers
+    )
+    has_upstream_artifact = any(
+        marker in lowered for marker in upstream_artifact_markers
+    )
+
+    # An editorial symptom must not hide an explicitly stated upstream cause.
+    if has_upstream_defect and has_upstream_artifact:
+        owner = owner_for_finding(finding)
+        if owner != "LK-EDITOR":
+            return "LEGAL_FIDELITY_ERROR", owner
+
+    if classification == "EDITORIAL":
+        return classification, "LK-EDITOR"
+
+    if classification == "SOURCE_ANOMALY":
+        owner = source_anomaly_owner(finding)
+        if owner is not None:
+            return classification, owner
+
+    return classification, owner_for_finding(finding)
+
+
 def build_remediation_plan(
     case_id: str,
     qa_report: dict[str, Any],
@@ -102,28 +345,29 @@ def build_remediation_plan(
     findings = flatten_findings(qa_report)
     work_items: list[dict[str, Any]] = []
 
-    for index, finding in enumerate(findings, start=1):
-        work_items.append(
-            {
-                "work_item_id": f"REM-{index:03d}",
-                "owner": owner_for_finding(finding),
-                "finding": finding,
-                "status": "PENDING",
-            }
-        )
+    human_review_items: list[dict[str, Any]] = []
 
-    if not work_items:
-        work_items.append(
-            {
-                "work_item_id": "REM-001",
-                "owner": "LK-EDITOR",
-                "finding": (
-                    "QA returned REVIEW_REQUIRED without a specific "
-                    "machine-readable finding. Re-audit editorial fidelity."
-                ),
-                "status": "PENDING",
-            }
-        )
+    item_number = 0
+
+    for finding in findings:
+        if not is_actionable_finding(finding):
+            continue
+
+        classification, owner = route_finding(finding)
+        item_number += 1
+
+        item = {
+            "work_item_id": f"REM-{item_number:03d}",
+            "owner": owner,
+            "classification": classification,
+            "finding": finding,
+            "status": "PENDING",
+        }
+
+        if classification == "HUMAN_REVIEW_REQUIRED":
+            human_review_items.append(item)
+        else:
+            work_items.append(item)
 
     owners = sorted(
         {item["owner"] for item in work_items},
@@ -138,9 +382,11 @@ def build_remediation_plan(
         "created_at_utc": utc_now(),
         "qa_verdict": qa_report.get("verdict"),
         "qa_confidence": qa_report.get("confidence"),
-        "earliest_owner": owners[0],
+        "earliest_owner": owners[0] if owners else None,
         "owners": owners,
         "work_items": work_items,
+        "human_review_items": human_review_items,
+        "requires_human_review": bool(human_review_items),
         "publication_ready": False,
     }
 
@@ -205,6 +451,27 @@ def execute_remediation(
         )
 
         execution: list[dict[str, Any]] = []
+
+        # Human-only findings must remain fail-closed.
+        # Do not invent an autonomous owner or execute downstream workers.
+        if plan["earliest_owner"] is None:
+            iteration_report = {
+                "iteration": iteration,
+                "plan": plan,
+                "execution": execution,
+                "qa_verdict_after_iteration": qa_report.get("verdict"),
+                "qa_confidence_after_iteration": qa_report.get("confidence"),
+                "completed_at_utc": utc_now(),
+            }
+
+            iterations.append(iteration_report)
+
+            write_json(
+                case_root
+                / f"evidence/remediation-iteration-{iteration:03d}.json",
+                iteration_report,
+            )
+            break
 
         for stage in stages_from(plan["earliest_owner"]):
             started = utc_now()

@@ -51,3 +51,13 @@ def test_live_requires_authorization(tmp_path: Path) -> None:
             provider_name="openai",
             allow_live=False,
         )
+
+
+def test_prompt_requires_earliest_source_classification() -> None:
+    from aidpl.qa_review_worker import build_prompt
+
+    system_prompt, _ = build_prompt("LK-TEST", {})
+
+    assert "earliest true source" in system_prompt
+    assert "Do not treat an editorial placeholder" in system_prompt
+    assert "Reserve editorial findings" in system_prompt
