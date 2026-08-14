@@ -281,6 +281,18 @@ def build_decision(
     relief_granted = []
     relief_denied = []
     costs = None
+    costs_pages: list[int] = []
+
+    # Costs are an independent part of the disposition. Detect them directly
+    # from the judgment pages rather than relying on the broader operative
+    # candidate window to preserve the costs marker.
+    for page in pages:
+        # split/join normalizes ordinary whitespace as well as Unicode
+        # separators such as NBSP found in court PDF extraction.
+        lowered_page = " ".join(page["text"].lower().split())
+        if "no cost" in lowered_page or "no costs" in lowered_page:
+            costs = "No order as to costs."
+            costs_pages.append(page["page"])
 
     for item in operative:
         lowered = item["text"].lower()
@@ -319,6 +331,14 @@ def build_decision(
                     "source_pages": item.get("source_pages", []),
                 }
             )
+
+    if costs is not None:
+        traceability.append(
+            {
+                "category": "costs",
+                "source_pages": sorted(set(costs_pages)),
+            }
+        )
 
     return {
         "schema_version": "1.0",

@@ -15,18 +15,45 @@
     "source_traceability"
   ],
   "properties": {
-    "schema_version": {"type": "string"},
-    "reference_case_id": {"type": "string"},
-    "status": {"type": "string"},
-    "constitutional_provisions": {"type": "array"},
-    "statutes": {"type": "array"},
-    "regulations": {"type": "array"},
-    "notifications": {"type": "array"},
-    "precedents": {"type": "array"},
-    "legal_doctrines": {"type": "array"},
-    "ratio_candidates": {"type": "array"},
-    "obiter_candidates": {"type": "array"},
-    "source_traceability": {"type": "array"},
-    "quality_notes": {"type": "array"}
-  }
+    "schema_version": {
+      "type": "string"
+    },
+    "reference_case_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "constitutional_provisions": {
+      "type": "array"
+    },
+    "statutes": {
+      "type": "array"
+    },
+    "regulations": {
+      "type": "array"
+    },
+    "notifications": {
+      "type": "array"
+    },
+    "precedents": {
+      "type": "array"
+    },
+    "legal_doctrines": {
+      "type": "array"
+    },
+    "ratio_candidates": {
+      "type": "array"
+    },
+    "obiter_candidates": {
+      "type": "array"
+    },
+    "source_traceability": {
+      "type": "array"
+    },
+    "quality_notes": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": false
 }

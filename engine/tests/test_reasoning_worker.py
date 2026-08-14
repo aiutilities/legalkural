@@ -82,6 +82,58 @@ def test_build_decision() -> None:
     assert decision["costs"] == "No order as to costs."
 
 
+def test_build_decision_detects_singular_no_cost_with_traceability() -> None:
+    pages = [
+        {
+            "page": 54,
+            "text": (
+                "In the result, all the writ petitions are allowed. "
+                "No cost. Consequently, the connected miscellaneous "
+                "petitions are also closed."
+            ),
+        }
+    ]
+
+    decision = build_decision(
+        case_id="LK-TEST-COSTS-0001",
+        pages=pages,
+        reasoning={"limitations": []},
+    )
+
+    assert decision["outcome"] == "Allowed"
+    assert decision["costs"] == "No order as to costs."
+    assert {
+        "category": "costs",
+        "source_pages": [54],
+    } in decision["source_traceability"]
+
+
+def test_build_decision_detects_no_cost_with_unicode_spaces() -> None:
+    pages = [
+        {
+            "page": 54,
+            "text": (
+                "13.\u00a0 In\u00a0 the\u00a0 result,\u00a0 all\u00a0 the\u00a0 "
+                "writ\u00a0 petitions\u00a0 are\u00a0 allowed.\u00a0 "
+                "No\u00a0 cost. Consequently, the connected miscellaneous "
+                "petitions are also closed."
+            ),
+        }
+    ]
+
+    decision = build_decision(
+        case_id="LK-TEST-COSTS-NBSP",
+        pages=pages,
+        reasoning={"limitations": []},
+    )
+
+    assert decision["costs"] == "No order as to costs."
+    assert {
+        "category": "costs",
+        "source_pages": [54],
+    } in decision["source_traceability"]
+
+
 def test_run_reasoning_analysis(tmp_path: Path) -> None:
     case_root = tmp_path / "case"
     working = case_root / "working"

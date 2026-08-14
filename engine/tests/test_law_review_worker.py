@@ -3,7 +3,10 @@ from pathlib import Path
 
 import pytest
 
+from jsonschema import ValidationError, validate
+
 from aidpl.law_review_worker import (
+    canonicalize_law_contract,
     decode_live_review,
     run_review,
 )
@@ -63,6 +66,72 @@ def test_decode_live_review() -> None:
     assert reviewed["review_summary"]["status"] == "COMPLETE"
 
 
+def test_canonicalize_law_contract_flattens_authorities() -> None:
+    payload = {
+        "status": "draft",
+        "case_id": "MODEL-CASE",
+        "authorities": {
+            "constitutional_provisions": [{"provision": "Article 14"}],
+            "statutes": [{"name": "Sample Act"}],
+            "regulations": [],
+            "notifications": [],
+            "precedents": [],
+            "legal_doctrines": [],
+        },
+        "constitutional_provisions": [{"provision": "Article 14"}],
+        "statutes": [{"name": "Sample Act"}],
+        "source_traceability": [
+            {
+                "category": "constitutional_provisions",
+                "source_pages": [1],
+            }
+        ],
+        "disposition_summary": {"outcome": "Allowed"},
+        "traceability_notes": ["Provider commentary."],
+    }
+
+    normalized = canonicalize_law_contract(
+        "LK-TEST",
+        payload,
+    )
+
+    assert normalized["schema_version"] == "1.0"
+    assert normalized["reference_case_id"] == "MODEL-CASE"
+    assert normalized["status"] == "MODEL_REVIEWED_LIVE"
+
+    assert normalized["constitutional_provisions"] == [
+        {"provision": "Article 14"}
+    ]
+    assert normalized["statutes"] == [{"name": "Sample Act"}]
+
+    assert "authorities" not in normalized
+    assert "case_id" not in normalized
+    assert "disposition_summary" not in normalized
+    assert "traceability_notes" not in normalized
+
+
+def test_canonicalize_law_contract_uses_nested_family_when_top_missing() -> None:
+    payload = {
+        "authorities": {
+            "constitutional_provisions": [],
+            "statutes": [{"name": "Nested Act"}],
+            "regulations": [],
+            "notifications": [],
+            "precedents": [],
+            "legal_doctrines": [],
+        },
+        "source_traceability": [],
+    }
+
+    normalized = canonicalize_law_contract(
+        "LK-TEST",
+        payload,
+    )
+
+    assert normalized["statutes"] == [{"name": "Nested Act"}]
+    assert "authorities" not in normalized
+
+
 def test_mock_review(tmp_path: Path) -> None:
     case_root = tmp_path / "case"
     create_case(case_root)
@@ -83,6 +152,38 @@ def test_mock_review(tmp_path: Path) -> None:
         case_root
         / "working/pre-law-model-review/06-law/law.json"
     ).exists()
+
+
+def test_law_schema_rejects_duplicate_authorities_container() -> None:
+    root = Path(__file__).resolve().parents[2]
+    schema = json.loads(
+        (root / "engine/schemas/law.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    artifact = {
+        "schema_version": "1.0",
+        "reference_case_id": "LK-TEST",
+        "status": "MODEL_REVIEWED_LIVE",
+        "constitutional_provisions": [],
+        "statutes": [],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [],
+        "obiter_candidates": [],
+        "source_traceability": [],
+        "quality_notes": [],
+        "authorities": {
+            "constitutional_provisions": [],
+            "statutes": [],
+        },
+    }
+
+    with pytest.raises(ValidationError):
+        validate(instance=artifact, schema=schema)
 
 
 def test_live_requires_authorization(tmp_path: Path) -> None:

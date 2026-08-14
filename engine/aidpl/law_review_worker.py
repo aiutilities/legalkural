@@ -97,6 +97,68 @@ def decode_live_review(transport: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+LAW_AUTHORITY_FAMILIES = (
+    "constitutional_provisions",
+    "statutes",
+    "regulations",
+    "notifications",
+    "precedents",
+    "legal_doctrines",
+)
+
+LAW_OPTIONAL_FIELDS = (
+    "ratio_candidates",
+    "obiter_candidates",
+    "quality_notes",
+)
+
+
+def canonicalize_law_contract(
+    case_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Normalize provider Law output to the canonical flat artifact contract.
+
+    Provider conveniences such as a nested ``authorities`` object or
+    commentary fields must not become persistent artifact schema.
+    """
+    authorities = payload.get("authorities")
+    if not isinstance(authorities, dict):
+        authorities = {}
+
+    canonical: dict[str, Any] = {
+        "schema_version": str(payload.get("schema_version") or "1.0"),
+        "reference_case_id": str(
+            payload.get("reference_case_id")
+            or payload.get("case_id")
+            or case_id
+        ),
+        "status": "MODEL_REVIEWED_LIVE",
+    }
+
+    for family in LAW_AUTHORITY_FAMILIES:
+        top_level = payload.get(family)
+        nested = authorities.get(family)
+
+        if isinstance(top_level, list):
+            canonical[family] = top_level
+        elif isinstance(nested, list):
+            canonical[family] = nested
+        else:
+            canonical[family] = []
+
+    for field in LAW_OPTIONAL_FIELDS:
+        value = payload.get(field)
+        canonical[field] = value if isinstance(value, list) else []
+
+    traceability = payload.get("source_traceability")
+    canonical["source_traceability"] = (
+        traceability if isinstance(traceability, list) else []
+    )
+
+    return canonical
+
+
 def mock_review(law: dict[str, Any]) -> dict[str, Any]:
     reviewed = json.loads(json.dumps(law))
     reviewed["status"] = "MODEL_REVIEWED_MOCK"
@@ -231,6 +293,11 @@ def run_review(
             "request_id": response.request_id,
             "usage": response.usage,
         }
+
+    reviewed["law"] = canonicalize_law_contract(
+        case_id,
+        reviewed["law"],
+    )
 
     repair_result = repair_to_schema(
         provider=provider,
