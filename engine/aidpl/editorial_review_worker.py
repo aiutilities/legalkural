@@ -225,10 +225,18 @@ Rules:
 6. Write for citizens, law students and lawyers in one coherent article.
 7. Preserve the Kural-inspired title and insight, but state clearly that it is original editorial writing and not authentic Thirukkural.
 8. Preserve publication, legal-advice and Founder-approval disclaimers.
-9. Include all required sections from the current draft.
-10. Target 1,500 to 2,500 words unless the source does not support that length.
-11. Do not add citations outside the source page references already present in artifacts.
-12. Return only the reviewed Markdown article in article_markdown plus review notes.
+9. The reviewed article MUST contain these exact Markdown section headings:
+   ## Case Snapshot
+   ## What Is the Case About?
+   ## How the Judge Reasoned
+   ## The Decision
+   ## Editorial Disclaimer
+10. Each required substantive section must contain meaningful content grounded only in the supplied verified artifacts. Do not emit placeholder text, instructions to an editor, or statements that merely tell the reader to consult another artifact.
+11. If the supplied artifacts do not contain enough verified substance to write a required section faithfully, do not invent the missing substance. Record the problem in uncertainties and legal_fidelity_notes. The downstream validator is intentionally fail-closed.
+12. You may reorganize or consolidate the current draft to satisfy the canonical section structure, but preserve legally material substance and source-page traceability.
+13. Target 1,500 to 2,500 words unless the source does not support that length.
+14. Do not add citations outside the source page references already present in artifacts.
+15. Return only the reviewed Markdown article in article_markdown plus review notes.
 """
 
     user_prompt = json.dumps(

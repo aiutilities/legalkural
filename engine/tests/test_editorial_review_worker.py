@@ -154,3 +154,37 @@ This is not personalised legal advice.
         "## The Decision" in blocker
         for blocker in blockers
     )
+
+
+def test_editor_prompt_requires_canonical_substantive_sections() -> None:
+    from aidpl.editorial_review_worker import build_prompt
+
+    system_prompt, _ = build_prompt(
+        case_id="LK-TEST",
+        metadata={},
+        timeline={},
+        facts={},
+        issues={},
+        evidence={},
+        law={},
+        reasoning={},
+        decision={},
+        kural={},
+        article="# Draft",
+    )
+
+    required_sections = [
+        "## Case Snapshot",
+        "## What Is the Case About?",
+        "## How the Judge Reasoned",
+        "## The Decision",
+        "## Editorial Disclaimer",
+    ]
+
+    for section in required_sections:
+        assert section in system_prompt
+
+    assert "meaningful content" in system_prompt
+    assert "Do not emit placeholder text" in system_prompt
+    assert "do not invent the missing substance" in system_prompt
+    assert "downstream validator is intentionally fail-closed" in system_prompt
