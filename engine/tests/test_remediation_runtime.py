@@ -1,4 +1,5 @@
 from aidpl.remediation_runtime import (
+    source_confirms_finding,
     build_remediation_plan,
     classify_finding,
     flatten_findings,
@@ -1113,3 +1114,478 @@ def test_article_19_1_8_stays_fidelity_error_when_absent_from_source(
 
     assert item["classification"] == "LEGAL_FIDELITY_ERROR"
     assert item["owner"] == "LK-LAW"
+
+
+
+def test_patch10_positive_metadata_consistency_is_not_actionable() -> None:
+    finding = (
+        "metadata [REVIEW_REQUIRED]: All other metadata fields appear "
+        "consistent with source-page mapping."
+    )
+    assert is_actionable_finding(finding) is False
+
+
+def test_patch10_positive_decision_match_is_not_actionable() -> None:
+    finding = (
+        "decision [REVIEW_REQUIRED]: Operative directions match disposition; "
+        "limitation is correctly captured."
+    )
+    assert is_actionable_finding(finding) is False
+
+
+def test_patch10_positive_article_fidelity_is_not_actionable() -> None:
+    finding = (
+        "article_markdown [REVIEW_REQUIRED]: Substantively faithful to the "
+        "judgment's holdings, limits, and traceability."
+    )
+    assert is_actionable_finding(finding) is False
+
+
+def test_patch10_mixed_affirmative_finding_with_real_defect_stays_actionable() -> None:
+    finding = (
+        "reasoning [REVIEW_REQUIRED]: Substantive reasoning aligns with "
+        "issues and decision; however, status flags are incorrect and "
+        "require correction."
+    )
+    assert is_actionable_finding(finding) is True
+
+
+
+def test_patch10_law_structure_duplicates_collapse() -> None:
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Law artifact contains duplicated sections inside authorities "
+                "and again as top-level constitutional_provisions. "
+                "Structural duplication requires consolidation."
+            ),
+            (
+                "law [REVIEW_REQUIRED]: Structural duplication: authorities "
+                "are listed inside authorities and again at top level."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["owner"] == "LK-LAW"
+
+
+def test_patch10_regulation_duplicates_collapse() -> None:
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Treatment of CMWSSB Regulation 4(ii): respondents' reliance "
+                "was rejected. Verify the judgment's exact framing."
+            ),
+            (
+                "law [REVIEW_REQUIRED]: Characterisation of CMWSSB Regulation "
+                "4(ii) as rejected should be verified; may need softening to "
+                "not determinative."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["owner"] == "LK-LAW"
+
+
+def test_patch10_statutory_definition_duplicates_collapse() -> None:
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Statutory definition sections: Verify the precise section "
+                "numbers and wording for residence and sleeping apartment."
+            ),
+            (
+                "law [REVIEW_REQUIRED]: Verify statutory definition section "
+                "numbers and quoted logic on sleeping apartment deeming."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["owner"] == "LK-LAW"
+
+
+def test_patch10_status_duplicates_collapse() -> None:
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Reasoning/decision workflow statuses: prior validation "
+                "indicates reasoning and decision require model review. "
+                "Align status flags."
+            ),
+            (
+                "reasoning [REVIEW_REQUIRED]: status flags need alignment "
+                "per prior validation and model review."
+            ),
+            (
+                "decision [REVIEW_REQUIRED]: Status alignment with prior "
+                "validation needed."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["owner"] == "LK-REASON"
+
+
+def test_patch10_costs_duplicates_collapse() -> None:
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Decision costs are not recorded (null) while "
+                "decision.source_traceability cites a costs page."
+            ),
+            (
+                "decision [REVIEW_REQUIRED]: Costs field is null though "
+                "source_traceability cites a costs page; confirm and record "
+                "the costs order including no costs if so."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["owner"] == "LK-EXTRACT"
+    assert plan["work_items"][0]["classification"] == "TRACEABILITY_GAP"
+
+
+def test_patch10_distinct_traceability_concerns_do_not_merge() -> None:
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Minor traceability hygiene: Ensure all page citations in "
+                "article and law match the judgment."
+            ),
+            (
+                "article_markdown [REVIEW_REQUIRED]: Ensure page-pin "
+                "citations remain accurate after upstream corrections."
+            ),
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 2
+
+
+
+def test_patch10e_source_confirms_statutory_definition_verification() -> None:
+    finding = (
+        "Statutory definition sections: Verify the precise section numbers "
+        "and wording for residence and sleeping apartment."
+    )
+    source = (
+        "Section 2(36) residence or reside. "
+        "Section 2(23) residence or reside. "
+        "Section 2(34) residence. "
+        "A portion used as a sleeping apartment is residence."
+    )
+
+    assert source_confirms_finding(finding, source) is True
+
+
+def test_patch10e_statutory_verification_without_source_stays_actionable() -> None:
+    finding = (
+        "Statutory definition sections: Verify the precise section numbers "
+        "and wording for residence and sleeping apartment."
+    )
+    source = "The Court discussed residence generally."
+
+    assert source_confirms_finding(finding, source) is False
+
+
+def test_patch10e_source_confirms_regulation_4ii_end_use_verification() -> None:
+    finding = (
+        "Treatment of CMWSSB Regulation 4(ii): respondents' reliance was "
+        "rejected. Verify the judgment's exact framing and whether it was "
+        "not determinative."
+    )
+    source = (
+        "Regulation 4(ii) states commercial premises includes private hostels. "
+        "The provision applies only if used as commercial premises. "
+        "The hostels are used for residential purpose."
+    )
+
+    assert source_confirms_finding(finding, source) is True
+
+
+def test_patch10e_regulation_defect_without_end_use_evidence_stays_actionable() -> None:
+    finding = (
+        "Treatment of Regulation 4(ii) appears unsupported and requires "
+        "correction."
+    )
+    source = "Regulation 4(ii) defines commercial premises."
+
+    assert source_confirms_finding(finding, source) is False
+
+
+def test_patch10e_completed_reasoning_review_suppresses_stale_status_concern(
+    tmp_path,
+) -> None:
+    import json
+
+    case_root = tmp_path / "case"
+    evidence = case_root / "evidence"
+    reasoning_dir = case_root / "output/07-reasoning"
+    decision_dir = case_root / "output/08-decision"
+
+    evidence.mkdir(parents=True)
+    reasoning_dir.mkdir(parents=True)
+    decision_dir.mkdir(parents=True)
+
+    (evidence / "reasoning-model-review-report.json").write_text(
+        json.dumps(
+            {
+                "status": "COMPLETE_LIVE",
+                "validated_artifacts": [
+                    "07-reasoning/reasoning.json",
+                    "08-decision/decision.json",
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    (reasoning_dir / "reasoning.json").write_text(
+        json.dumps({"status": "MODEL_REVIEWED_LIVE"}),
+        encoding="utf-8",
+    )
+    (decision_dir / "decision.json").write_text(
+        json.dumps({"status": "MODEL_REVIEWED_LIVE"}),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Reasoning/decision workflow statuses: prior validation "
+                "indicates reasoning and decision require model review. "
+                "Align status flags."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert plan["work_items"] == []
+
+
+def test_patch10e_incomplete_review_does_not_suppress_status_concern(
+    tmp_path,
+) -> None:
+    import json
+
+    case_root = tmp_path / "case"
+    evidence = case_root / "evidence"
+    reasoning_dir = case_root / "output/07-reasoning"
+    decision_dir = case_root / "output/08-decision"
+
+    evidence.mkdir(parents=True)
+    reasoning_dir.mkdir(parents=True)
+    decision_dir.mkdir(parents=True)
+
+    (evidence / "reasoning-model-review-report.json").write_text(
+        json.dumps(
+            {
+                "status": "PENDING",
+                "validated_artifacts": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    (reasoning_dir / "reasoning.json").write_text(
+        json.dumps({"status": "REQUIRES_MODEL_REVIEW"}),
+        encoding="utf-8",
+    )
+    (decision_dir / "decision.json").write_text(
+        json.dumps({"status": "REQUIRES_MODEL_REVIEW"}),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Reasoning/decision workflow statuses: prior validation "
+                "indicates reasoning and decision require model review. "
+                "Align status flags."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert len(plan["work_items"]) == 1
+
+
+
+def test_patch10e_r2_live_electricity_wording_is_source_confirmed() -> None:
+    finding = (
+        "reasoning [REVIEW_REQUIRED]: Confirm breadth of electricity-tariff "
+        "conclusion across the batch per the judgment's operative text."
+    )
+    source = (
+        "The Court directs that electricity charges shall be collected "
+        "at the residential tariff."
+    )
+
+    assert source_confirms_finding(finding, source) is True
+
+
+def test_patch10e_r2_live_electricity_wording_without_direction_stays_actionable() -> None:
+    finding = (
+        "reasoning [REVIEW_REQUIRED]: Confirm breadth of electricity-tariff "
+        "conclusion across the batch per the judgment's operative text."
+    )
+    source = (
+        "The judgment discusses electricity charges and the disputes "
+        "raised by the parties."
+    )
+
+    assert source_confirms_finding(finding, source) is False
+
+
+def test_patch10e_r2_confirm_alone_does_not_suppress_unrelated_finding() -> None:
+    finding = (
+        "Confirm breadth of the legal conclusion across the batch "
+        "per the judgment's operative text."
+    )
+    source = (
+        "The Court directs that electricity charges shall be collected "
+        "at the residential tariff."
+    )
+
+    assert source_confirms_finding(finding, source) is False
+
+
+
+def test_patch10e_r3_nonbreaking_hyphen_electricity_is_source_confirmed() -> None:
+    finding = (
+        "reasoning [REVIEW_REQUIRED]: Confirm breadth of electricity-tariff "
+        "conclusion across the batch per the judgment's operative text."
+    )
+    source = (
+        "The Court held that electricity charges shall be collected "
+        "only at the residential tariff."
+    )
+
+    assert source_confirms_finding(finding, source) is True
+
+
+def test_patch10e_r3_unicode_hyphen_does_not_create_false_confirmation() -> None:
+    finding = (
+        "reasoning [REVIEW_REQUIRED]: Confirm breadth of electricity-tariff "
+        "conclusion across the batch per the judgment's operative text."
+    )
+    source = (
+        "The judgment refers generally to electricity charges but contains "
+        "no residential tariff direction."
+    )
+
+    assert source_confirms_finding(finding, source) is False
+
+
+def test_patch10e_r3_ascii_and_unicode_electricity_wording_match_equally() -> None:
+    ascii_finding = (
+        "Confirm breadth of electricity-tariff conclusion across the batch "
+        "per the judgment's operative text."
+    )
+    unicode_finding = (
+        "Confirm breadth of electricity-tariff conclusion across the batch "
+        "per the judgment's operative text."
+    )
+    source = (
+        "Electricity charges shall be collected only at the residential tariff."
+    )
+
+    assert source_confirms_finding(ascii_finding, source) is True
+    assert source_confirms_finding(unicode_finding, source) is True
+
+
+
+def test_patch10e_r4_negated_residential_rate_is_not_confirmation() -> None:
+    finding = (
+        "Confirm breadth of electricity-tariff conclusion across the batch "
+        "per the judgment's operative text."
+    )
+    source = (
+        "The judgment contains no residential rate direction concerning "
+        "electricity charges."
+    )
+
+    assert source_confirms_finding(finding, source) is False
+
+
+def test_patch10e_r4_positive_residential_tariff_remains_confirmation() -> None:
+    finding = (
+        "Confirm breadth of electricity-tariff conclusion across the batch "
+        "per the judgment's operative text."
+    )
+    source = (
+        "The Court directs that electricity charges shall be collected "
+        "at the residential tariff."
+    )
+
+    assert source_confirms_finding(finding, source) is True
+
+
+
+def test_patch10f_nonbreaking_hyphen_electricity_verification() -> None:
+    finding = (
+        "reasoning [REVIEW_REQUIRED]: Confirm breadth of electricity-tariff "
+        "conclusion across the batch per the judgment’s operative text."
+    )
+    source = (
+        "The Court directs that electricity charges shall be collected "
+        "at the residential tariff."
+    )
+
+    assert source_confirms_finding(finding, source) is True
+
+
+def test_patch10f_nonbreaking_hyphen_preserves_negation_safety() -> None:
+    finding = (
+        "reasoning [REVIEW_REQUIRED]: Confirm breadth of electricity-tariff "
+        "conclusion across the batch per the judgment’s operative text."
+    )
+    source = (
+        "The judgment discusses electricity charges but contains "
+        "no residential tariff direction."
+    )
+
+    assert source_confirms_finding(finding, source) is False

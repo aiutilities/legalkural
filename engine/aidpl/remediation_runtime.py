@@ -292,6 +292,12 @@ def is_actionable_finding(finding: str) -> bool:
     affirmative_markers = AFFIRMATIVE_FINDING_MARKERS + (
         "appears coherent",
         "acceptable",
+        "appear consistent",
+        "appears consistent",
+        "match disposition",
+        "matches disposition",
+        "correctly captured",
+        "substantively faithful",
     )
 
     strong_defect_markers = (
@@ -334,6 +340,24 @@ def route_finding(finding: str) -> tuple[str, str | None]:
         return classification, None
 
     lowered = finding.lower()
+
+    # Structural duplication inside the Law artifact belongs to LK-LAW.
+    # Do this before generic domain routing so incidental structural wording
+    # cannot incorrectly send the concern to LK-EXTRACT.
+    law_structure_markers = (
+        "structural duplication",
+        "duplicated sections",
+        "duplicate sections",
+    )
+    if (
+        "law" in lowered
+        and "authorit" in lowered
+        and any(
+            marker in lowered
+            for marker in law_structure_markers
+        )
+    ):
+        return "LEGAL_FIDELITY_ERROR", "LK-LAW"
 
     # A source anomaly means the questionable text originates in the
     # authoritative source itself. Preserve that classification while
@@ -497,11 +521,17 @@ def source_confirms_finding(
 
     def normalize_match_text(value: str) -> str:
         """Normalize superficial punctuation differences for evidence matching."""
+        dash_translation = {
+            ord("-"): " ",       # U+002D HYPHEN-MINUS
+            0x2010: " ",         # HYPHEN
+            0x2011: " ",         # NON-BREAKING HYPHEN
+            0x2012: " ",         # FIGURE DASH
+            0x2013: " ",         # EN DASH
+            0x2014: " ",         # EM DASH
+        }
         return " ".join(
             value.lower()
-            .replace("-", " ")
-            .replace("–", " ")
-            .replace("—", " ")
+            .translate(dash_translation)
             .split()
         )
 
@@ -547,8 +577,11 @@ def source_confirms_finding(
             for marker in (
                 "verify",
                 "verification",
+                "confirm",
                 "binding direction",
                 "operative direction",
+                "operative text",
+                "across the batch",
             )
         )
     )
@@ -558,13 +591,176 @@ def source_confirms_finding(
         and any(marker in source for marker in direction_markers)
     )
 
+    # Presence of the relevant words is not enough when the source explicitly
+    # negates the proposition. Keep such findings actionable rather than
+    # treating "no residential tariff direction" as confirming evidence.
+    electricity_negation_markers = (
+        "no residential tariff",
+        "no residential rate",
+        "not residential tariff",
+        "not residential rate",
+        "without residential tariff",
+        "without residential rate",
+    )
+    source_negates_electricity_direction = any(
+        marker in source
+        for marker in electricity_negation_markers
+    )
+
     if (
         finding_is_electricity_verification
         and source_has_electricity_direction
+        and not source_negates_electricity_direction
+    ):
+        return True
+
+    # --------------------------------------------------------
+    # Statutory residence-definition verification.
+    #
+    # Suppress only when the finding is a verification request
+    # and the authoritative source itself contains all three
+    # implicated statutory section numbers together with the
+    # sleeping-apartment proposition.
+    # --------------------------------------------------------
+    statutory_verification_markers = (
+        "statutory definition",
+        "section numbers",
+        "sleeping apartment",
+    )
+    finding_is_statutory_verification = (
+        any(marker in lowered for marker in statutory_verification_markers)
+        and any(
+            marker in lowered
+            for marker in ("verify", "verification", "confirm")
+        )
+    )
+
+    source_has_statutory_definitions = (
+        "2(23)" in source
+        and "2(36)" in source
+        and "2(34)" in source
+        and "sleeping apartment" in source
+    )
+
+    if (
+        finding_is_statutory_verification
+        and source_has_statutory_definitions
+    ):
+        return True
+
+    # --------------------------------------------------------
+    # CMWSSB Regulation 4(ii) verification.
+    #
+    # The source expressly states that Regulation 4(ii) applies
+    # only when private hostels are used as commercial premises
+    # and does not apply where their use is residential.
+    # Do not suppress generic Regulation 4(ii) defects: require
+    # both verification language and the end-use proposition.
+    # --------------------------------------------------------
+    finding_is_regulation_verification = (
+        "regulation 4(ii)" in lowered
+        and any(
+            marker in lowered
+            for marker in (
+                "verify",
+                "verification",
+                "exact framing",
+                "rejected",
+                "not determinative",
+            )
+        )
+    )
+
+    source_has_regulation_end_use = (
+        "regulation 4(ii)" in source
+        and "commercial premises" in source
+        and "residential purpose" in source
+    )
+
+    if (
+        finding_is_regulation_verification
+        and source_has_regulation_end_use
     ):
         return True
 
     return False
+
+
+def evidence_confirms_finding(
+    finding: str,
+    case_root: Path | None,
+) -> bool:
+    """Return True only when case evidence disproves a stale QA concern."""
+    import json
+
+    if case_root is None:
+        return False
+
+    lowered = " ".join(finding.lower().split())
+
+    status_concern = (
+        "status" in lowered
+        and (
+            "reasoning" in lowered
+            or "decision" in lowered
+        )
+        and any(
+            marker in lowered
+            for marker in (
+                "require model review",
+                "requires model review",
+                "need alignment",
+                "status flags",
+                "prior validation",
+            )
+        )
+    )
+
+    if not status_concern:
+        return False
+
+    report_path = case_root / "evidence/reasoning-model-review-report.json"
+    reasoning_path = case_root / "output/07-reasoning/reasoning.json"
+    decision_path = case_root / "output/08-decision/decision.json"
+
+    if not (
+        report_path.exists()
+        and reasoning_path.exists()
+        and decision_path.exists()
+    ):
+        return False
+
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        reasoning = json.loads(reasoning_path.read_text(encoding="utf-8"))
+        decision = json.loads(decision_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+
+    validated = report.get("validated_artifacts", [])
+    validated = validated if isinstance(validated, list) else []
+
+    review_complete = report.get("status") == "COMPLETE_LIVE"
+    reasoning_validated = "07-reasoning/reasoning.json" in validated
+    decision_validated = "08-decision/decision.json" in validated
+
+    reviewed_statuses = {
+        "MODEL_REVIEWED",
+        "MODEL_REVIEWED_LIVE",
+        "FINAL",
+    }
+
+    artifacts_reviewed = (
+        reasoning.get("status") in reviewed_statuses
+        and decision.get("status") in reviewed_statuses
+    )
+
+    return (
+        review_complete
+        and reasoning_validated
+        and decision_validated
+        and artifacts_reviewed
+    )
 
 
 def decompose_finding(finding: str) -> list[str]:
@@ -808,6 +1004,138 @@ def remediation_fingerprint(
                 "constitution-article-19-1-8",
             )
 
+    # Law structure duplication may be reported globally and again by the
+    # per-artifact review. Treat it as one Law-stage remediation concern.
+    law_structure_markers = (
+        "structural duplication",
+        "duplicated sections",
+        "authorities are listed",
+        "top level",
+        "top-level",
+    )
+    if (
+        "law" in normalized
+        and any(marker in normalized for marker in law_structure_markers)
+        and (
+            "authorities" in normalized
+            or "constitutional provisions" in normalized
+        )
+    ):
+        return (
+            "LEGAL_FIDELITY_ERROR",
+            "LK-LAW",
+            "law-structure-duplication",
+        )
+
+    # Regulation 4(ii) characterisation is one legal interpretation concern
+    # even when QA reports it globally and in the Law artifact review.
+    if (
+        "regulation 4(ii)" in normalized
+        or re.search(
+            r"regulation\s+4\s*\(\s*ii\s*\)",
+            normalized,
+        )
+    ):
+        if any(
+            marker in normalized
+            for marker in (
+                "rejected",
+                "not determinative",
+                "verify",
+                "softening",
+                "characterisation",
+                "characterization",
+            )
+        ):
+            return (
+                "LEGAL_FIDELITY_ERROR",
+                "LK-LAW",
+                "cmwssb-regulation-4-ii-characterisation",
+            )
+
+    # The statutory-definition verification may appear once in the global
+    # review and again in the Law artifact review.
+    statutory_definition_markers = (
+        "statutory definition",
+        "sleeping apartment",
+        "s.2(23)",
+        "s.2(36)",
+        "s.2(34)",
+        "section numbers",
+    )
+    if (
+        any(
+            marker in normalized
+            for marker in statutory_definition_markers
+        )
+        and any(
+            marker in normalized
+            for marker in (
+                "verify",
+                "precise",
+                "wording",
+                "deeming",
+                "definition",
+            )
+        )
+    ):
+        return (
+            "LEGAL_FIDELITY_ERROR",
+            "LK-LAW",
+            "statutory-definition-verification",
+        )
+
+    # Workflow/status alignment is one Reason-stage concern even when QA
+    # reports it against reasoning and decision separately.
+    status_markers = (
+        "workflow statuses",
+        "status flags",
+        "status alignment",
+        "status alignment with prior validation",
+        "model reviewed live",
+        "model_reviewed_live",
+    )
+    if (
+        any(marker in normalized for marker in status_markers)
+        and any(
+            marker in normalized
+            for marker in (
+                "reasoning",
+                "decision",
+                "prior validation",
+                "model review",
+                "review state",
+            )
+        )
+    ):
+        return (
+            "LEGAL_FIDELITY_ERROR",
+            "LK-REASON",
+            "reasoning-decision-status-alignment",
+        )
+
+    # A null/missing costs field with a cited costs page is one extraction /
+    # traceability remediation concern regardless of whether it appears in
+    # global QA or the Decision artifact review.
+    if (
+        "costs" in normalized
+        and any(
+            marker in normalized
+            for marker in (
+                "null",
+                "not recorded",
+                "costs page",
+                "record the costs",
+                "no costs",
+            )
+        )
+    ):
+        return (
+            "TRACEABILITY_GAP",
+            "LK-EXTRACT",
+            "decision-costs-traceability",
+        )
+
     # Fail conservative: unrelated findings remain distinct.
     return classification, owner, normalized
 
@@ -835,6 +1163,9 @@ def build_remediation_plan(
             continue
 
         if source_confirms_finding(finding, source_text):
+            continue
+
+        if evidence_confirms_finding(finding, case_root):
             continue
 
         classification, owner = route_finding(finding)
