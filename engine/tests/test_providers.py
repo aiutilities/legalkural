@@ -46,6 +46,31 @@ def test_mock_structured_response() -> None:
     assert json.loads(response.text)["status"] == "PASS"
 
 
+def test_model_request_json_schema_strict_defaults_true() -> None:
+    request = ModelRequest(
+        agent_id="LK-TEST",
+        task="Test",
+        system_prompt="System",
+        user_prompt="User",
+        response_format="json",
+    )
+
+    assert request.json_schema_strict is True
+
+
+def test_model_request_json_schema_strict_can_be_disabled() -> None:
+    request = ModelRequest(
+        agent_id="LK-TEST",
+        task="Test",
+        system_prompt="System",
+        user_prompt="User",
+        response_format="json",
+        json_schema_strict=False,
+    )
+
+    assert request.json_schema_strict is False
+
+
 def test_factory_supports_expected_providers() -> None:
     assert create_provider("mock").name == "mock"
     assert create_provider("openai").name == "openai"

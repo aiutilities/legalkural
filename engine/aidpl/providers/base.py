@@ -13,6 +13,7 @@ class ModelRequest:
     user_prompt: str
     response_format: str = "text"
     json_schema: dict[str, Any] | None = None
+    json_schema_strict: bool = True
     temperature: float = 0.0
     max_output_tokens: int = 4096
     metadata: dict[str, str] = field(default_factory=dict)

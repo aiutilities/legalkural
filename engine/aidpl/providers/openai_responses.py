@@ -76,17 +76,24 @@ class OpenAIResponsesProvider(ModelProvider):
         }
 
         if request.response_format == "json":
-            payload["text"] = {
-                "format": {
-                    "type": "json_schema",
-                    "name": "legal_kural_agent_output",
-                    "strict": True,
-                    "schema": request.json_schema or {
-                        "type": "object",
-                        "additionalProperties": True,
-                    },
+            if request.json_schema_strict:
+                payload["text"] = {
+                    "format": {
+                        "type": "json_schema",
+                        "name": "legal_kural_agent_output",
+                        "strict": True,
+                        "schema": request.json_schema or {
+                            "type": "object",
+                            "additionalProperties": True,
+                        },
+                    }
                 }
-            }
+            else:
+                payload["text"] = {
+                    "format": {
+                        "type": "json_object",
+                    }
+                }
 
         raw, headers = post_json(
             url=f"{self.base_url}/responses",

@@ -74,7 +74,9 @@ def transport_schema() -> dict[str, Any]:
     }
 
 
-def decode_live_review(transport: dict[str, Any]) -> dict[str, Any]:
+def decode_live_review(
+    transport: dict[str, Any],
+) -> dict[str, Any]:
     reviewed: dict[str, Any] = {}
 
     for output_name, transport_name in [
@@ -83,24 +85,28 @@ def decode_live_review(transport: dict[str, Any]) -> dict[str, Any]:
     ]:
         raw = transport.get(transport_name)
 
-        if not isinstance(raw, str):
+        if isinstance(raw, dict):
+            decoded = raw
+        elif isinstance(raw, str):
+            try:
+                decoded = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Provider field {transport_name} contains invalid JSON."
+                ) from exc
+        else:
             raise ValueError(
-                f"Provider field {transport_name} must be a JSON string."
+                f"Provider field {transport_name} must be "
+                "a JSON object or JSON string."
             )
 
-        try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError as exc:
+        if not isinstance(decoded, dict):
             raise ValueError(
-                f"Provider field {transport_name} contains invalid JSON."
-            ) from exc
-
-        if not isinstance(parsed, dict):
-            raise ValueError(
-                f"Provider field {transport_name} must decode to an object."
+                f"Provider field {transport_name} must resolve "
+                "to a JSON object."
             )
 
-        reviewed[output_name] = parsed
+        reviewed[output_name] = decoded
 
     reviewed["review_summary"] = {
         "status": transport["review_status"],
@@ -109,7 +115,6 @@ def decode_live_review(transport: dict[str, Any]) -> dict[str, Any]:
     }
 
     return reviewed
-
 
 def mock_review(
     reasoning: dict[str, Any],
@@ -161,9 +166,30 @@ Rules:
 4. Distinguish accepted arguments, rejected arguments, ratio candidates and obiter candidates.
 5. Preserve page-level traceability for every material conclusion.
 6. Record the operative result exactly and preserve factual limitations.
-7. Return reasoning and decision as valid JSON-encoded strings.
-8. Use empty arrays where the source does not establish a category.
-9. Do not provide personalised legal advice or editorial commentary.
+7. Your entire response MUST be one JSON object with exactly these five top-level keys:
+   - "reasoning_json"
+   - "decision_json"
+   - "review_status"
+   - "changes_made"
+   - "uncertainties"
+8. "reasoning_json" MUST contain the complete reviewed reasoning object. Preserve the structure of deterministic_reasoning wherever possible.
+9. "decision_json" MUST contain the complete reviewed decision object. Preserve the structure of deterministic_decision wherever possible.
+10. "review_status" MUST be a string describing completion status.
+11. "changes_made" MUST be an array of strings.
+12. "uncertainties" MUST be an array of strings.
+13. Do NOT return case_id, court, issues, reasoning_path, findings, disposition_summary or any other field at the outermost response level. Such information belongs inside reasoning_json or decision_json as appropriate.
+14. Do NOT wrap the response in Markdown or a code fence.
+15. Use empty arrays where the source does not establish a category.
+16. Do not provide personalised legal advice or editorial commentary.
+
+Required outer response shape:
+{
+  "reasoning_json": {},
+  "decision_json": {},
+  "review_status": "COMPLETED",
+  "changes_made": [],
+  "uncertainties": []
+}
 """
 
     user_prompt = json.dumps(
@@ -289,11 +315,6 @@ def normalize_reasoning_contract(
         "source_traceability",
     }
 
-    if required.issubset(payload):
-        normalized = json.loads(json.dumps(payload))
-        normalized["reference_case_id"] = case_id
-        return normalized
-
     normalized_issues: list[dict[str, Any]] = []
     reasoning_steps: list[dict[str, Any]] = []
     accepted: list[dict[str, Any]] = []
@@ -416,11 +437,6 @@ def normalize_decision_contract(
         "source_traceability",
     }
 
-    if required.issubset(payload):
-        normalized = json.loads(json.dumps(payload))
-        normalized["reference_case_id"] = case_id
-        return normalized
-
     outcome = (
         payload.get("outcome")
         or payload.get("result")
@@ -480,13 +496,32 @@ def normalize_decision_contract(
         ]
 
     costs_value = payload.get("costs")
-    costs = (
-        str(costs_value)
-        if costs_value not in (None, "")
-        else None
-    )
+    costs_pages: list[Any] = []
+
+    if isinstance(costs_value, dict):
+        costs_text = costs_value.get("text")
+        costs = (
+            str(costs_text)
+            if costs_text not in (None, "")
+            else None
+        )
+        costs_pages = _as_list(costs_value.get("source_pages"))
+    else:
+        costs = (
+            str(costs_value)
+            if costs_value not in (None, "")
+            else None
+        )
 
     traceability = []
+
+    if costs_pages:
+        traceability.append(
+            {
+                "category": "costs",
+                "source_pages": costs_pages,
+            }
+        )
 
     for category, items in [
         ("operative_directions", operative),
@@ -591,6 +626,7 @@ def run_review(
                 user_prompt=user_prompt,
                 response_format="json",
                 json_schema=transport_schema(),
+                json_schema_strict=False,
                 temperature=0.0,
                 max_output_tokens=12000,
                 metadata={

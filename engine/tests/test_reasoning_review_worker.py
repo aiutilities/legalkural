@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from aidpl.reasoning_review_worker import (
+    build_prompt,
     decode_live_review,
     run_review,
 )
@@ -70,6 +71,82 @@ def test_decode_live_review() -> None:
 
     assert reviewed["reasoning"]["status"] == "REVIEWED"
     assert reviewed["decision"]["status"] == "REVIEWED"
+
+
+def test_build_prompt_requires_transport_envelope() -> None:
+    system_prompt, _ = build_prompt(
+        "LK-TEST",
+        "source",
+        {},
+        {},
+        {},
+        {},
+        {},
+    )
+
+    for field in (
+        "reasoning_json",
+        "decision_json",
+        "review_status",
+        "changes_made",
+        "uncertainties",
+    ):
+        assert field in system_prompt
+
+    assert "exactly these five top-level keys" in system_prompt
+    assert "outermost response level" in system_prompt
+
+
+def test_decode_live_review_accepts_native_objects() -> None:
+    transport = {
+        "reasoning_json": {"status": "REVIEWED"},
+        "decision_json": {"status": "REVIEWED"},
+        "review_status": "COMPLETE",
+        "changes_made": [],
+        "uncertainties": [],
+    }
+
+    reviewed = decode_live_review(transport)
+
+    assert reviewed["reasoning"] == {"status": "REVIEWED"}
+    assert reviewed["decision"] == {"status": "REVIEWED"}
+    assert reviewed["review_summary"]["status"] == "COMPLETE"
+
+
+def test_normalize_decision_contract_normalizes_rich_costs() -> None:
+    from aidpl.reasoning_review_worker import normalize_decision_contract
+
+    payload = {
+        "schema_version": "1.0",
+        "reference_case_id": "MODEL-CASE",
+        "status": "REVIEWED",
+        "outcome": "Allowed",
+        "operative_directions": [],
+        "relief_granted": [],
+        "relief_denied": [],
+        "costs": {
+            "text": "No costs. Connected miscellaneous petitions closed.",
+            "source_pages": [53],
+        },
+        "limitations": [],
+        "source_traceability": [],
+    }
+
+    normalized = normalize_decision_contract(
+        "LK-TEST",
+        payload,
+        {"limitations": []},
+    )
+
+    assert normalized["reference_case_id"] == "LK-TEST"
+    assert normalized["status"] == "MODEL_REVIEWED_LIVE"
+    assert normalized["costs"] == (
+        "No costs. Connected miscellaneous petitions closed."
+    )
+    assert {
+        "category": "costs",
+        "source_pages": [53],
+    } in normalized["source_traceability"]
 
 
 def test_mock_review(tmp_path: Path) -> None:
