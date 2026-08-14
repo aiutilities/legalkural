@@ -464,11 +464,168 @@ def route_finding(finding: str) -> tuple[str, str | None]:
     return classification, owner_for_finding(finding)
 
 
+def source_text_for_case(case_root: Path | None) -> str:
+    """Load authoritative source text when a case root is available."""
+    if case_root is None:
+        return ""
+
+    source_path = case_root / "working/source-text.txt"
+    if not source_path.exists():
+        return ""
+
+    return source_path.read_text(
+        encoding="utf-8",
+        errors="replace",
+    )
+
+
+def source_confirms_finding(
+    finding: str,
+    source_text: str,
+) -> bool:
+    """Return True only for narrow propositions expressly confirmed by source.
+
+    This is intentionally conservative. It suppresses a verification-only
+    remediation item only when the authoritative judgment text itself
+    expressly establishes the proposition being questioned.
+
+    Contradictions, source anomalies, legal miscitation concerns and other
+    substantive defects remain actionable.
+    """
+    if not source_text:
+        return False
+
+    def normalize_match_text(value: str) -> str:
+        """Normalize superficial punctuation differences for evidence matching."""
+        return " ".join(
+            value.lower()
+            .replace("-", " ")
+            .replace("–", " ")
+            .replace("—", " ")
+            .split()
+        )
+
+    lowered = normalize_match_text(finding)
+    source = normalize_match_text(source_text)
+
+    # Never suppress a finding already identified as a source anomaly.
+    if classify_finding(finding) == "SOURCE_ANOMALY":
+        return False
+
+    # Never suppress explicit contradiction/fidelity defects merely because
+    # one version of the disputed text occurs somewhere in the source.
+    defect_markers = (
+        "inconsistency",
+        "mismatch",
+        "conflict",
+        "contradiction",
+        "incorrect",
+        "mis-citation",
+        "mis-cited",
+        "does not exist",
+        "not a valid",
+    )
+    if any(marker in lowered for marker in defect_markers):
+        return False
+
+    # Narrow source-confirmation contract for an operative electricity-tariff
+    # verification request. Both concepts must occur in the authoritative
+    # source; this does not infer party status or cure unrelated defects.
+    electricity_markers = (
+        "electricity tariff",
+        "electricity charges",
+    )
+    direction_markers = (
+        "residential tariff",
+        "residential rate",
+    )
+
+    finding_is_electricity_verification = (
+        any(marker in lowered for marker in electricity_markers)
+        and any(
+            marker in lowered
+            for marker in (
+                "verify",
+                "verification",
+                "binding direction",
+                "operative direction",
+            )
+        )
+    )
+
+    source_has_electricity_direction = (
+        any(marker in source for marker in electricity_markers)
+        and any(marker in source for marker in direction_markers)
+    )
+
+    if (
+        finding_is_electricity_verification
+        and source_has_electricity_direction
+    ):
+        return True
+
+    return False
+
+
+def decompose_finding(finding: str) -> list[str]:
+    """Split only explicitly enumerated compound QA findings.
+
+    QA sometimes returns one finding containing independent ``(a)``, ``(b)``,
+    ``(c)`` remediation concerns.  Those concerns must be evaluated
+    independently so source confirmation of one clause cannot suppress, or be
+    blocked by, an unrelated clause.
+
+    This intentionally does not perform general sentence splitting.
+    """
+    import re
+
+    matches = list(
+        re.finditer(
+            r"(?<!\w)\(([a-z])\)\s+",
+            finding,
+            flags=re.IGNORECASE,
+        )
+    )
+
+    if len(matches) < 2:
+        return [finding]
+
+    prefix = finding[:matches[0].start()].strip()
+    parts: list[str] = []
+
+    for index, match in enumerate(matches):
+        start = match.end()
+        end = (
+            matches[index + 1].start()
+            if index + 1 < len(matches)
+            else len(finding)
+        )
+
+        clause = finding[start:end].strip()
+        clause = clause.strip(" ;")
+
+        if not clause:
+            continue
+
+        if prefix:
+            parts.append(f"{prefix} {clause}")
+        else:
+            parts.append(clause)
+
+    return parts or [finding]
+
+
 def build_remediation_plan(
     case_id: str,
     qa_report: dict[str, Any],
+    case_root: Path | None = None,
 ) -> dict[str, Any]:
-    findings = flatten_findings(qa_report)
+    findings = [
+        concern
+        for finding in flatten_findings(qa_report)
+        for concern in decompose_finding(finding)
+    ]
+    source_text = source_text_for_case(case_root)
     work_items: list[dict[str, Any]] = []
 
     human_review_items: list[dict[str, Any]] = []
@@ -477,6 +634,9 @@ def build_remediation_plan(
 
     for finding in findings:
         if not is_actionable_finding(finding):
+            continue
+
+        if source_confirms_finding(finding, source_text):
             continue
 
         classification, owner = route_finding(finding)
@@ -568,7 +728,11 @@ def execute_remediation(
         if qa_report.get("verdict") == "PASS":
             break
 
-        plan = build_remediation_plan(case_id, qa_report)
+        plan = build_remediation_plan(
+            case_id,
+            qa_report,
+            case_root=case_root,
+        )
         plan["iteration"] = iteration
 
         write_json(

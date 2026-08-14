@@ -323,3 +323,326 @@ def test_wp_year_mismatch_routes_to_extract() -> None:
 
     assert classification == "LEGAL_FIDELITY_ERROR"
     assert owner == "LK-EXTRACT"
+
+
+def test_source_confirmed_electricity_verification_is_not_remediation(
+    tmp_path,
+) -> None:
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "The Court directs that electricity charges applicable to the "
+            "petitioners shall be collected at the residential tariff."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Scope of operative direction to electricity tariff: "
+                "verify from the judgment that this was a binding direction."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert plan["work_items"] == []
+    assert plan["owners"] == []
+    assert plan["earliest_owner"] is None
+
+
+def test_source_anomaly_remains_actionable_even_when_text_is_in_source(
+    tmp_path,
+) -> None:
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "The petitioners rely upon Article 19(1)(8) of the "
+            "Constitution of India."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Legal authority contains a likely error quoted verbatim "
+                "from the judgment and requires verification."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["classification"] == "SOURCE_ANOMALY"
+    assert plan["work_items"][0]["owner"] == "LK-LAW"
+    assert plan["earliest_owner"] == "LK-LAW"
+
+
+def test_electricity_verification_without_source_remains_fail_closed() -> None:
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Scope of operative direction to electricity tariff: "
+                "verify from the judgment that this was a binding direction."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["classification"] == "TRACEABILITY_GAP"
+    assert plan["work_items"][0]["owner"] == "LK-REASON"
+    assert plan["earliest_owner"] == "LK-REASON"
+
+
+def test_source_confirmation_does_not_suppress_explicit_contradiction(
+    tmp_path,
+) -> None:
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "Electricity charges shall be collected at the residential "
+            "tariff."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "There is an inconsistency in the electricity tariff "
+                "direction and it requires verification."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    assert len(plan["work_items"]) == 1
+
+
+def test_remediation_runtime_builds_plan_with_case_root(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    import aidpl.remediation_runtime as runtime
+
+    case_root = tmp_path / "LK-TEST"
+    evidence = case_root / "evidence"
+    working = case_root / "working"
+
+    evidence.mkdir(parents=True)
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "The Court directs that electricity charges shall be "
+            "collected only at the residential tariff."
+        ),
+        encoding="utf-8",
+    )
+
+    qa_report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Scope of operative direction to electricity tariff: "
+                "verify from the judgment that this was a binding direction."
+            ),
+            "Tamil couplet requires human language and cultural review.",
+        ],
+    }
+
+    runtime.write_json(
+        evidence / "qa-model-review-report.json",
+        qa_report,
+    )
+
+    captured = {}
+    original = runtime.build_remediation_plan
+
+    def capturing_build_plan(
+        case_id,
+        report,
+        case_root=None,
+    ):
+        captured["case_root"] = case_root
+        return original(
+            case_id,
+            report,
+            case_root=case_root,
+        )
+
+    monkeypatch.setattr(
+        runtime,
+        "build_remediation_plan",
+        capturing_build_plan,
+    )
+
+    result = runtime.execute_remediation(
+        root=tmp_path,
+        case_id="LK-TEST",
+        case_root=case_root,
+        provider="mock",
+        allow_live=False,
+        max_iterations=1,
+    )
+
+    assert captured["case_root"] == case_root.resolve()
+
+    iteration = result["iterations"][0]
+    plan = iteration["plan"]
+
+    # Electricity verification is source-confirmed and suppressed.
+    assert plan["work_items"] == []
+
+    # Human-only gate remains fail-closed.
+    assert len(plan["human_review_items"]) == 1
+    assert plan["earliest_owner"] is None
+    assert plan["requires_human_review"] is True
+
+
+def test_decompose_finding_splits_explicit_lettered_concerns() -> None:
+    from aidpl.remediation_runtime import decompose_finding
+
+    finding = (
+        "article_markdown [REVIEW_REQUIRED]: Reflects accurately. However: "
+        "(a) resolve the WP year inconsistency; "
+        "(b) verify the electricity-tariff direction; "
+        "(c) add a brief note if Article 19(1)(8) is a typographical slip."
+    )
+
+    parts = decompose_finding(finding)
+
+    assert len(parts) == 3
+    assert "WP year inconsistency" in parts[0]
+    assert "electricity-tariff direction" in parts[1]
+    assert "Article 19(1)(8)" in parts[2]
+
+
+def test_decompose_finding_does_not_split_normal_prose() -> None:
+    from aidpl.remediation_runtime import decompose_finding
+
+    finding = (
+        "Scope of operative direction to electricity tariff: verify from "
+        "the judgment that this was a binding direction."
+    )
+
+    assert decompose_finding(finding) == [finding]
+
+
+def test_compound_finding_source_confirms_only_electricity_clause(
+    tmp_path,
+) -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    case_root = tmp_path / "LK-TEST"
+    working = case_root / "working"
+    working.mkdir(parents=True)
+
+    (working / "source-text.txt").write_text(
+        (
+            "The Court directs that electricity charges shall be collected "
+            "at the residential tariff."
+        ),
+        encoding="utf-8",
+    )
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "artifact_findings": [
+            {
+                "artifact": "article_markdown",
+                "status": "REVIEW_REQUIRED",
+                "findings": [
+                    (
+                        "Reflects the holdings accurately. However: "
+                        "(a) resolve the WP year inconsistency and harmonize; "
+                        "(b) verify the electricity-tariff direction as a "
+                        "binding direction; "
+                        "(c) verify Article 19(1)(8), which is not a valid "
+                        "constitutional provision."
+                    )
+                ],
+            }
+        ],
+    }
+
+    plan = build_remediation_plan(
+        "LK-TEST",
+        report,
+        case_root=case_root,
+    )
+
+    findings = [item["finding"] for item in plan["work_items"]]
+
+    assert len(findings) == 2
+    assert any("WP year inconsistency" in item for item in findings)
+    assert any("Article 19(1)(8)" in item for item in findings)
+    assert not any("electricity-tariff direction" in item for item in findings)
+
+    assert plan["owners"] == ["LK-EXTRACT", "LK-LAW"]
+    assert plan["earliest_owner"] == "LK-EXTRACT"
+
+
+def test_compound_finding_without_source_keeps_all_concerns() -> None:
+    from aidpl.remediation_runtime import build_remediation_plan
+
+    report = {
+        "verdict": "REVIEW_REQUIRED",
+        "confidence": 0.8,
+        "review_findings": [
+            (
+                "Multiple concerns: "
+                "(a) resolve the WP year inconsistency and harmonize; "
+                "(b) verify the electricity tariff as a binding direction; "
+                "(c) verify Article 19(1)(8), which is not a valid provision."
+            )
+        ],
+    }
+
+    plan = build_remediation_plan("LK-TEST", report)
+
+    assert len(plan["work_items"]) == 3
+    assert plan["owners"] == [
+        "LK-EXTRACT",
+        "LK-LAW",
+        "LK-REASON",
+    ]
+    assert plan["earliest_owner"] == "LK-EXTRACT"
