@@ -173,7 +173,18 @@ def run_qa(case_id: str, case_root: Path) -> dict[str, Any]:
         kural,
         re.MULTILINE,
     ):
-        if "pending" not in kural.lower() and "deferred" not in kural.lower():
+        tamil_review_completed = (
+            "- [x] Tamil language review completed"
+            in kural
+            or "- [X] Tamil language review completed"
+            in kural
+        )
+
+        if (
+            "pending" not in kural.lower()
+            and "deferred" not in kural.lower()
+            and not tamil_review_completed
+        ):
             review_reasons.append(
                 "Tamil editorial content requires independent review."
             )

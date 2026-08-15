@@ -157,3 +157,67 @@ def test_qa_ignores_superseded_stage_review_markers(
             relative in reason
             for reason in report["review_reasons"]
         )
+
+def test_tamil_content_requires_review_when_human_gate_incomplete(tmp_path):
+    create_case(tmp_path, review_required=False)
+
+    kural_path = tmp_path / "output/09-kural/kural.md"
+    kural_path.parent.mkdir(parents=True, exist_ok=True)
+    kural_path.write_text(
+        """# Test Kural
+
+## Kural-Inspired Tamil
+
+> **பெயரன்று பயன்பாடே பொருள்;**
+> **உறைவோர்க்கு உறைவிடம் வீடு.**
+
+## Review Gate
+
+- [x] Manual legal coherence review completed
+- [x] Legal fidelity review completed
+- [ ] Tamil language review completed
+- [ ] Founder approval recorded
+""",
+        encoding="utf-8",
+    )
+
+    report = run_qa("LK-TEST", tmp_path)
+
+    assert report["verdict"] == "REVIEW_REQUIRED"
+    assert (
+        "Tamil editorial content requires independent review."
+        in report["review_reasons"]
+    )
+
+
+def test_tamil_content_does_not_require_review_when_human_gate_complete(
+    tmp_path,
+):
+    create_case(tmp_path, review_required=False)
+
+    kural_path = tmp_path / "output/09-kural/kural.md"
+    kural_path.parent.mkdir(parents=True, exist_ok=True)
+    kural_path.write_text(
+        """# Test Kural
+
+## Kural-Inspired Tamil
+
+> **பெயரன்று பயன்பாடே பொருள்;**
+> **உறைவோர்க்கு உறைவிடம் வீடு.**
+
+## Review Gate
+
+- [x] Manual legal coherence review completed
+- [x] Legal fidelity review completed
+- [x] Tamil language review completed
+- [x] Founder approval recorded
+""",
+        encoding="utf-8",
+    )
+
+    report = run_qa("LK-TEST", tmp_path)
+
+    assert (
+        "Tamil editorial content requires independent review."
+        not in report["review_reasons"]
+    )
