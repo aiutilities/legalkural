@@ -48,11 +48,11 @@ def render_review(
 
 ## What Needs Improvement
 
-- Model-assisted review is still required for legal fidelity.
-- Tamil Kural-inspired writing remains deferred.
-- Regulation and precedent detection require higher recall.
-- Candidate facts and reasoning steps require consolidation.
-- Publication cannot proceed until QA returns PASS.
+- Preserve only lessons supported by the completed case evidence.
+- Separate case-specific corrections from reusable pipeline improvements.
+- Regulation and precedent detection should continue to be measured for recall.
+- Learning must never modify certified publication artifacts.
+- Publication state must be taken from the current QA evidence, not assumed.
 
 ## Reusable Pattern
 
@@ -103,12 +103,11 @@ Connect model-assisted legal review to:
 - LK-EDITOR
 - LK-QA
 
-## Founder Decision Required
+## Post-Case Governance
 
-Do not publish this case until:
-
-- QA verdict becomes PASS.
-- Founder authorization is recorded.
+- If QA is not publication-ready, learning output must not represent the case as certified.
+- If QA is publication-ready, treat learning as post-certification analysis.
+- Learning must not alter the certified source, legal artifacts, Kural, article, or QA evidence.
 """
 
 
@@ -141,9 +140,11 @@ def run_learning(
         "qa_verdict": qa.get("verdict"),
         "publication_ready": qa.get("publication_ready", False),
         "next_action": (
-            "MODEL_ASSISTED_REVIEW"
+            "POST_CERTIFICATION_LEARNING_REVIEW"
+            if qa.get("publication_ready") is True
+            else "MODEL_ASSISTED_REVIEW"
             if qa.get("verdict") == "REVIEW_REQUIRED"
-            else "FOUNDER_AUTHORIZATION"
+            else "REMEDIATION_REQUIRED"
         ),
     }
 
