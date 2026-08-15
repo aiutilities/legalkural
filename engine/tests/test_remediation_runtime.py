@@ -9,6 +9,7 @@ from aidpl.remediation_runtime import (
     stages_from,
     decompose_finding,
     remediation_fingerprint,
+    execution_stages_for_plan,
 )
 
 
@@ -1693,3 +1694,99 @@ def test_b9_r3_tamil_review_findings_share_fingerprint():
         "HUMAN_REVIEW_REQUIRED",
         None,
     )
+
+
+def test_b10_r3_execution_stages_are_explicit_owners_only():
+    plan = {
+        "earliest_owner": "LK-EXTRACT",
+        "owners": [
+            "LK-EXTRACT",
+            "LK-LAW",
+        ],
+    }
+
+    assert execution_stages_for_plan(plan) == [
+        "LK-EXTRACT",
+        "LK-LAW",
+    ]
+
+
+def test_b10_r3_execution_stages_do_not_infer_downstream_pipeline():
+    plan = {
+        "earliest_owner": "LK-LAW",
+        "owners": [
+            "LK-LAW",
+        ],
+    }
+
+    stages = execution_stages_for_plan(plan)
+
+    assert stages == ["LK-LAW"]
+    assert "LK-REASON" not in stages
+    assert "LK-KURAL" not in stages
+    assert "LK-EDITOR" not in stages
+    assert "LK-QA" not in stages
+
+
+def test_b10_r3_execution_stages_preserve_pipeline_order():
+    plan = {
+        "earliest_owner": "LK-LAW",
+        "owners": [
+            "LK-EDITOR",
+            "LK-LAW",
+        ],
+    }
+
+    assert execution_stages_for_plan(plan) == [
+        "LK-LAW",
+        "LK-EDITOR",
+    ]
+
+
+def test_b10_r3_human_only_plan_executes_no_stages():
+    plan = {
+        "earliest_owner": None,
+        "owners": [],
+        "work_items": [],
+        "human_review_items": [
+            {
+                "classification": "HUMAN_REVIEW_REQUIRED",
+                "owner": None,
+            }
+        ],
+    }
+
+    assert execution_stages_for_plan(plan) == []
+
+
+def test_b10_r4_remediation_runtime_has_no_downstream_orchestration_commands():
+    import inspect
+    import aidpl.remediation_runtime as runtime
+
+    source = inspect.getsource(runtime.execute_remediation)
+
+    forbidden = (
+        "aidpl-review-run",
+        "aidpl-review-after-law",
+        "aidpl-review-after-reason",
+        "aidpl-review-after-kural",
+        "aidpl-review-after-editor",
+    )
+
+    for value in forbidden:
+        assert value not in source
+
+
+def test_b10_r4_explicit_extract_law_plan_has_no_reason_or_later_stage():
+    plan = {
+        "owners": ["LK-EXTRACT", "LK-LAW"],
+        "earliest_owner": "LK-EXTRACT",
+    }
+
+    stages = execution_stages_for_plan(plan)
+
+    assert stages == ["LK-EXTRACT", "LK-LAW"]
+    assert "LK-REASON" not in stages
+    assert "LK-KURAL" not in stages
+    assert "LK-EDITOR" not in stages
+    assert "LK-QA" not in stages

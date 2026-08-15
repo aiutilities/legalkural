@@ -1370,6 +1370,25 @@ def stages_from(owner: str) -> list[str]:
     return STAGE_ORDER[STAGE_ORDER.index(owner):]
 
 
+
+def execution_stages_for_plan(plan: dict[str, Any]) -> list[str]:
+    """Return only stages explicitly owning current remediation work.
+
+    Remediation planning already assigns each autonomous finding to its
+    earliest responsible owner. Execution must not infer that every later
+    pipeline stage requires another model review merely because an earlier
+    owner exists. Any downstream regeneration must be explicitly requested
+    by a subsequent plan/runtime after a real artifact change.
+    """
+    owners = plan.get("owners", [])
+
+    return [
+        stage
+        for stage in STAGE_ORDER
+        if stage in owners
+    ]
+
+
 def execute_remediation(
     root: Path,
     case_id: str,
@@ -1423,33 +1442,63 @@ def execute_remediation(
             )
             break
 
-        for stage in stages_from(plan["earliest_owner"]):
+        for stage in execution_stages_for_plan(plan):
             started = utc_now()
 
             if stage == "LK-EXTRACT":
                 steps = [
-                    command(root, "aidpl-review-extract", case_id, case_root, provider, allow_live),
-                    command(root, "aidpl-review-run", case_id, case_root),
+                    command(
+                        root,
+                        "aidpl-review-extract",
+                        case_id,
+                        case_root,
+                        provider,
+                        allow_live,
+                    ),
                 ]
             elif stage == "LK-LAW":
                 steps = [
-                    command(root, "aidpl-review-law", case_id, case_root, provider, allow_live),
-                    command(root, "aidpl-review-after-law", case_id, case_root),
+                    command(
+                        root,
+                        "aidpl-review-law",
+                        case_id,
+                        case_root,
+                        provider,
+                        allow_live,
+                    ),
                 ]
             elif stage == "LK-REASON":
                 steps = [
-                    command(root, "aidpl-review-reason", case_id, case_root, provider, allow_live),
-                    command(root, "aidpl-review-after-reason", case_id, case_root),
+                    command(
+                        root,
+                        "aidpl-review-reason",
+                        case_id,
+                        case_root,
+                        provider,
+                        allow_live,
+                    ),
                 ]
             elif stage == "LK-KURAL":
                 steps = [
-                    command(root, "aidpl-review-kural", case_id, case_root, provider, allow_live),
-                    command(root, "aidpl-review-after-kural", case_id, case_root),
+                    command(
+                        root,
+                        "aidpl-review-kural",
+                        case_id,
+                        case_root,
+                        provider,
+                        allow_live,
+                    ),
                 ]
             elif stage == "LK-EDITOR":
                 steps = [
-                    command(root, "aidpl-review-editor", case_id, case_root, provider, allow_live),
-                    command(root, "aidpl-review-after-editor", case_id, case_root),
+                    command(
+                        root,
+                        "aidpl-review-editor",
+                        case_id,
+                        case_root,
+                        provider,
+                        allow_live,
+                    ),
                 ]
             else:
                 steps = [
