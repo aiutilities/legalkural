@@ -298,6 +298,12 @@ def is_actionable_finding(finding: str) -> bool:
         "matches disposition",
         "correctly captured",
         "substantively faithful",
+        "no other structural issues noted",
+        "align with downstream artifacts",
+        "aligns with downstream artifacts",
+        "overall presentation is faithful",
+        "generally faithful",
+        "disclaimers are present",
     )
 
     strong_defect_markers = (
@@ -311,6 +317,11 @@ def is_actionable_finding(finding: str) -> bool:
         "requires correction",
         "mis-citation",
         "mis-cited",
+        "ensure ",
+        "retain ",
+        "must ",
+        "requires ",
+        "should ",
     )
 
     if any(marker in lowered for marker in affirmative_markers):
@@ -631,7 +642,14 @@ def source_confirms_finding(
         any(marker in lowered for marker in statutory_verification_markers)
         and any(
             marker in lowered
-            for marker in ("verify", "verification", "confirm")
+            for marker in (
+                "verify",
+                "verification",
+                "confirm",
+                "cross checked",
+                "cross check",
+                "cross-check",
+            )
         )
     )
 
@@ -763,6 +781,49 @@ def evidence_confirms_finding(
     )
 
 
+
+def _protect_legal_parentheticals(
+    value: str,
+) -> tuple[str, dict[str, str]]:
+    """Protect legal subsection references during finding decomposition."""
+    import re
+
+    protected: dict[str, str] = {}
+    counter = 0
+
+    pattern = re.compile(
+        r"""
+        (?:
+            \b(?:article|section|s\.?|regulation|rule)\s*
+        )?
+        \d+
+        (?:\s*\(\s*[0-9A-Za-z]+\s*\))+
+        """,
+        re.IGNORECASE | re.VERBOSE,
+    )
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal counter
+
+        token = f"__LEGAL_REF_{counter}__"
+        protected[token] = match.group(0)
+        counter += 1
+        return token
+
+    return pattern.sub(replace, value), protected
+
+
+def _restore_legal_parentheticals(
+    value: str,
+    protected: dict[str, str],
+) -> str:
+    """Restore legal references protected during decomposition."""
+    for token, original in protected.items():
+        value = value.replace(token, original)
+
+    return value
+
+
 def decompose_finding(finding: str) -> list[str]:
     """Split only explicitly enumerated compound QA findings.
 
@@ -773,6 +834,7 @@ def decompose_finding(finding: str) -> list[str]:
 
     This intentionally does not perform general sentence splitting.
     """
+    finding, _protected_legal_refs = _protect_legal_parentheticals(finding)
     import re
 
     matches = list(
@@ -784,7 +846,12 @@ def decompose_finding(finding: str) -> list[str]:
     )
 
     if len(matches) < 2:
-        return [finding]
+        return [
+            _restore_legal_parentheticals(
+                finding,
+                _protected_legal_refs,
+            )
+        ]
 
     prefix = finding[:matches[0].start()].strip()
     parts: list[str] = []
@@ -808,7 +875,15 @@ def decompose_finding(finding: str) -> list[str]:
         else:
             parts.append(clause)
 
-    return parts or [finding]
+    result = parts or [finding]
+
+    return [
+        _restore_legal_parentheticals(
+            item,
+            _protected_legal_refs,
+        )
+        for item in result
+    ]
 
 
 def source_anomaly_semantics(
@@ -1083,6 +1158,45 @@ def remediation_fingerprint(
             "LEGAL_FIDELITY_ERROR",
             "LK-LAW",
             "statutory-definition-verification",
+        )
+
+
+    # Equality/discrimination-as-obiter can be reported globally and
+    # again against article_markdown. They are one fidelity concern.
+    if (
+        "obiter" in normalized
+        and (
+            "equality" in normalized
+            or "discrimination" in normalized
+        )
+        and (
+            "ratio" in normalized
+            or "retain" in normalized
+            or "kept as obiter" in normalized
+        )
+    ):
+        return (
+            "LEGAL_FIDELITY_ERROR",
+            "LK-LAW",
+            "equality-discrimination-obiter-scope",
+        )
+
+    # Tamil review can be reported globally, against kural_brief,
+    # and against article_markdown. It is one mandatory human gate.
+    if (
+        "tamil" in normalized
+        and (
+            "human review" in normalized
+            or "human language" in normalized
+            or "language/cultural review" in normalized
+            or "language and cultural review" in normalized
+            or "requires human" in normalized
+        )
+    ):
+        return (
+            "HUMAN_REVIEW_REQUIRED",
+            None,
+            "tamil-kural-human-review",
         )
 
     # Workflow/status alignment is one Reason-stage concern even when QA

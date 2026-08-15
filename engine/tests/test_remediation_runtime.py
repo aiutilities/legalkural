@@ -7,6 +7,8 @@ from aidpl.remediation_runtime import (
     owner_for_finding,
     route_finding,
     stages_from,
+    decompose_finding,
+    remediation_fingerprint,
 )
 
 
@@ -1589,3 +1591,105 @@ def test_patch10f_nonbreaking_hyphen_preserves_negation_safety() -> None:
     )
 
     assert source_confirms_finding(finding, source) is False
+
+
+def test_b9_r3_decompose_preserves_article_19_lettered_clauses():
+    finding = (
+        "Mis-citation of the Constitution: the law/article refer to "
+        "Article 19(1)(8). There is no clause (8) under Article 19(1); "
+        "likely 19(1)(g) or 19(1)(e) was intended. "
+        "Verification against the judgment is required."
+    )
+
+    pieces = decompose_finding(finding)
+    rendered = " ".join(pieces)
+
+    assert "19(1)(g)" in rendered
+    assert "19(1)(e)" in rendered
+    assert "likely 19(1) or 19(1)" not in rendered
+
+
+def test_b9_r3_source_confirms_cross_checked_statutory_request():
+    finding = (
+        "Statutory definitions: The reliance on residence/reside "
+        "definitions (Chennai Act s.2(23); Coimbatore Act s.2(36); "
+        "TN ULB Act s.2(34)) and the sleeping apartment formulation "
+        "appears plausible; however, section numbering and wording "
+        "should be cross-checked against the judgment extracts."
+    )
+
+    source = (
+        "Section 2(23) residence or reside and sleeping apartment. "
+        "Section 2(36) residence or reside and sleeping apartment. "
+        "Section 2(34) residence or reside and sleeping apartment."
+    )
+
+    assert source_confirms_finding(
+        finding,
+        source,
+    ) is True
+
+
+def test_b9_r3_positive_metadata_observation_not_actionable():
+    finding = (
+        "metadata [REVIEW_REQUIRED]: No other structural issues noted; "
+        "dates, judge, court, and disposition align with downstream artifacts."
+    )
+
+    assert is_actionable_finding(finding) is False
+
+
+def test_b9_r3_mixed_obiter_instruction_remains_actionable():
+    finding = (
+        "Editorial scope is generally faithful to upstream holdings; "
+        "ensure the discrimination/equality observation is kept as "
+        "obiter and not elevated to ratio."
+    )
+
+    assert is_actionable_finding(finding) is True
+
+
+def test_b9_r3_obiter_findings_share_fingerprint():
+    first = (
+        "Editorial scope is generally faithful; ensure the "
+        "discrimination/equality observation is kept as obiter "
+        "and not elevated to ratio."
+    )
+
+    second = (
+        "article_markdown [REVIEW_REQUIRED]: Overall presentation "
+        "is faithful. Retain equality point as obiter after "
+        "correcting the citation."
+    )
+
+    assert remediation_fingerprint(
+        first,
+        "LEGAL_FIDELITY_ERROR",
+        "LK-LAW",
+    ) == remediation_fingerprint(
+        second,
+        "EDITORIAL",
+        "LK-EDITOR",
+    )
+
+
+def test_b9_r3_tamil_review_findings_share_fingerprint():
+    first = (
+        "Tamil Kural-inspired couplet: Requires mandatory human "
+        "Tamil language and cultural review before publication."
+    )
+
+    second = (
+        "article_markdown [REVIEW_REQUIRED]: Tamil lines require "
+        "human review prior to publication."
+    )
+
+    assert remediation_fingerprint(
+        first,
+        "HUMAN_REVIEW_REQUIRED",
+        None,
+    ) == remediation_fingerprint(
+        second,
+        "HUMAN_REVIEW_REQUIRED",
+        None,
+    )
