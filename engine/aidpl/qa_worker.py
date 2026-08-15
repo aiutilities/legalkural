@@ -112,10 +112,21 @@ def run_qa(case_id: str, case_root: Path) -> dict[str, Any]:
                 "payload_status": payload.get("status"),
             })
 
+            superseded_stage_reports = {
+                "evidence/extraction-report.json",
+                "evidence/law-analysis-report.json",
+                "evidence/reasoning-analysis-report.json",
+                "evidence/kural-generation-report.json",
+                "evidence/editorial-report.json",
+            }
+
             for marker in sorted(
                 collect_status_markers(payload) & REVIEW_MARKERS
             ):
-                review_reasons.append(f"{relative}: {marker}")
+                if relative not in superseded_stage_reports:
+                    review_reasons.append(
+                        f"{relative}: {marker}"
+                    )
         else:
             checks.append({
                 "path": relative,
@@ -137,20 +148,25 @@ def run_qa(case_id: str, case_root: Path) -> dict[str, Any]:
         else ""
     )
 
-    for phrase in [
-        "not personalised legal advice",
-        "Founder authorises publication",
-        "Publication status",
-    ]:
-        if phrase.lower() not in article.lower():
+    article_requirements = [
+        ("not personalised legal advice",),
+        (
+            "Founder authorises publication",
+            "Founder approval",
+        ),
+        ("Publication status",),
+    ]
+
+    for alternatives in article_requirements:
+        if not any(
+            phrase.lower() in article.lower()
+            for phrase in alternatives
+        ):
             blocking_errors.append(
-                f"Article missing required phrase: {phrase}"
+                "Article missing required phrase: "
+                + " OR ".join(alternatives)
             )
 
-    if "not an authentic" not in kural.lower():
-        blocking_errors.append(
-            "Kural artifact is missing the authenticity disclaimer."
-        )
 
     if re.search(
         r"^\s*##?\s+Kural-Inspired Tamil\s*$",

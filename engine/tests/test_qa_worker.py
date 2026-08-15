@@ -95,3 +95,65 @@ def test_publication_uses_qa_verdict(tmp_path: Path) -> None:
 
     authorize_founder(plan)
     assert plan["publication"]["ready"] is False
+
+
+
+def test_qa_accepts_founder_approval_equivalent(tmp_path: Path) -> None:
+    case_root = tmp_path / "case"
+    create_case(case_root, review_required=False)
+
+    article_path = case_root / "output/10-article/article.md"
+    article = article_path.read_text(encoding="utf-8")
+
+    article = article.replace(
+        "Founder authorises publication",
+        "Founder approval",
+    )
+
+    article_path.write_text(article, encoding="utf-8")
+
+    report = run_qa("LK-QA-TEST-FOUNDER", case_root)
+
+    assert not any(
+        "Founder authorises publication" in error
+        for error in report["blocking_errors"]
+    )
+
+
+def test_qa_ignores_superseded_stage_review_markers(
+    tmp_path: Path,
+) -> None:
+    case_root = tmp_path / "case"
+    create_case(case_root, review_required=False)
+
+    historical_statuses = {
+        "evidence/extraction-report.json":
+            "COMPLETE_WITH_MODEL_REVIEW_REQUIRED",
+        "evidence/law-analysis-report.json":
+            "COMPLETE_WITH_MODEL_REVIEW_REQUIRED",
+        "evidence/reasoning-analysis-report.json":
+            "COMPLETE_WITH_MODEL_REVIEW_REQUIRED",
+        "evidence/kural-generation-report.json":
+            "COMPLETE_WITH_EDITORIAL_REVIEW_REQUIRED",
+        "evidence/editorial-report.json":
+            "COMPLETE_WITH_QA_REQUIRED",
+    }
+
+    import json
+
+    for relative, status in historical_statuses.items():
+        path = case_root / relative
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["status"] = status
+        path.write_text(
+            json.dumps(payload, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    report = run_qa("LK-QA-TEST-HISTORY", case_root)
+
+    for relative in historical_statuses:
+        assert not any(
+            relative in reason
+            for reason in report["review_reasons"]
+        )
