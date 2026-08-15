@@ -127,3 +127,62 @@ def test_run_kural_generation(tmp_path: Path) -> None:
     assert report["tamil_generation"] == "DEFERRED"
     assert (output / "09-kural/kural-brief.json").exists()
     assert (output / "09-kural/kural.md").exists()
+
+
+def test_derive_holding_prefers_substantive_reviewed_argument_when_ratio_empty():
+    from aidpl.kural_worker import derive_holding
+
+    reasoning = {
+        "ratio_candidates": [],
+        "accepted_arguments": [
+            {
+                "text": (
+                    "Tariff classification must be based on end-use from "
+                    "the perspective of the recipient of services; inmates "
+                    "use hostel rooms as residences, hence residential "
+                    "tariff applies."
+                ),
+                "status": "MODEL_REVIEWED",
+            },
+            {
+                "text": (
+                    "No prior notice was given before reclassification, "
+                    "violating principles of natural justice."
+                ),
+                "status": "MODEL_REVIEWED",
+            },
+        ],
+    }
+
+    decision = {
+        "outcome": "Allowed",
+        "operative_directions": [
+            {
+                "text": (
+                    "All the impugned demand/recovery notices are quashed."
+                )
+            }
+        ],
+    }
+
+    holding = derive_holding(reasoning, decision)
+
+    assert "end-use" in holding
+    assert "residential tariff applies" in holding
+
+
+def test_derive_principle_recognizes_end_use_classification():
+    from aidpl.kural_worker import derive_principle
+
+    holding = (
+        "Tariff classification must be based on end-use from the "
+        "perspective of the recipient; residential use attracts "
+        "residential rather than commercial tariff."
+    )
+
+    principle = derive_principle(holding, [])
+
+    assert principle == (
+        "Legal classification should follow proven functional use, "
+        "not merely the label or commercial identity attached to it."
+    )

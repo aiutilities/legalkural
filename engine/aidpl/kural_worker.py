@@ -158,6 +158,33 @@ def derive_holding(
     if ratio:
         return ratio
 
+    accepted_arguments = reasoning.get("accepted_arguments", [])
+
+    for item in accepted_arguments:
+        if not isinstance(item, dict):
+            continue
+
+        candidate = str(item.get("text") or "")
+        lowered = candidate.lower()
+
+        if (
+            "end-use" in lowered
+            or "actual use" in lowered
+            or (
+                "residential" in lowered
+                and "commercial" in lowered
+            )
+        ):
+            return candidate
+
+    accepted = first_text(
+        accepted_arguments,
+        "",
+    )
+
+    if accepted:
+        return accepted
+
     relief = first_text(
         decision.get("operative_directions", []),
         "",
@@ -176,7 +203,15 @@ def derive_principle(
 ) -> str:
     lowered = holding.lower()
 
-    if "actual use" in lowered or "usage" in lowered:
+    if (
+        "actual use" in lowered
+        or "usage" in lowered
+        or "end-use" in lowered
+        or (
+            "residential" in lowered
+            and "commercial" in lowered
+        )
+    ):
         principle = (
             "Legal classification should follow proven functional use, "
             "not merely the label or commercial identity attached to it."
