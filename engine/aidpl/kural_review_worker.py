@@ -94,6 +94,55 @@ def decode_live_review(transport: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def normalize_legal_holding(value: Any) -> str:
+    """Normalize model-supplied legal holding into publication-safe prose.
+
+    The model may return either a plain string or a structured object.
+    Structured holdings are flattened deterministically instead of being
+    stringified as Python dict syntax.
+    """
+    if value in (None, ""):
+        return ""
+
+    if isinstance(value, str):
+        return value
+
+    if isinstance(value, dict):
+        preferred_order = (
+            "classification_and_tariff",
+            "natural_justice_and_maintainability",
+            "operative_limits",
+        )
+
+        parts: list[str] = []
+
+        for key in preferred_order:
+            item = value.get(key)
+            if item not in (None, ""):
+                parts.append(str(item).strip())
+
+        for key, item in value.items():
+            if key in preferred_order:
+                continue
+            if item not in (None, ""):
+                parts.append(str(item).strip())
+
+        return " ".join(
+            part
+            for part in parts
+            if part
+        )
+
+    if isinstance(value, list):
+        return " ".join(
+            str(item).strip()
+            for item in value
+            if item not in (None, "")
+        )
+
+    return str(value)
+
+
 def normalize_kural_contract(
     case_id: str,
     payload: dict[str, Any],
@@ -117,10 +166,9 @@ def normalize_kural_contract(
             or payload.get("conflict")
             or ""
         ),
-        "legal_holding": str(
+        "legal_holding": normalize_legal_holding(
             payload.get("legal_holding")
             or payload.get("holding")
-            or ""
         ),
         "universal_principle": str(
             payload.get("universal_principle")

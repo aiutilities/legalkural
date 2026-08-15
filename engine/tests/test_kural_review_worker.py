@@ -6,6 +6,7 @@ import pytest
 from aidpl.kural_review_worker import (
     decode_live_review,
     normalize_kural_contract,
+    normalize_legal_holding,
     run_review,
 )
 
@@ -119,3 +120,65 @@ def test_live_requires_authorization(tmp_path: Path) -> None:
             provider_name="openai",
             allow_live=False,
         )
+
+
+def test_normalize_legal_holding_flattens_structured_model_output() -> None:
+    holding = {
+        "classification_and_tariff": (
+            "Tariff classification follows residential end-use."
+        ),
+        "natural_justice_and_maintainability": (
+            "Reclassification without notice breached natural justice."
+        ),
+        "operative_limits": (
+            "The directions are confined to the present batch."
+        ),
+    }
+
+    normalized = normalize_legal_holding(holding)
+
+    assert normalized == (
+        "Tariff classification follows residential end-use. "
+        "Reclassification without notice breached natural justice. "
+        "The directions are confined to the present batch."
+    )
+
+    assert "{'" not in normalized
+    assert "'classification_and_tariff'" not in normalized
+
+
+def test_normalize_kural_contract_accepts_structured_legal_holding() -> None:
+    normalized = normalize_kural_contract(
+        "LK-TEST",
+        {
+            "compressed_title": "End-Use Over Label",
+            "human_conflict": "A tariff classification dispute.",
+            "legal_holding": {
+                "classification_and_tariff": (
+                    "Residential end-use attracts residential tariff."
+                ),
+                "natural_justice_and_maintainability": (
+                    "Reclassification without notice breached natural justice."
+                ),
+                "operative_limits": (
+                    "Similar cases require factual verification."
+                ),
+            },
+            "universal_principle": (
+                "Classification should follow proven functional use."
+            ),
+            "kural_inspired_english": (
+                "Use reveals what labels conceal."
+            ),
+            "kural_inspired_tamil": None,
+            "source_traceability": [],
+        },
+    )
+
+    assert normalized["legal_holding"] == (
+        "Residential end-use attracts residential tariff. "
+        "Reclassification without notice breached natural justice. "
+        "Similar cases require factual verification."
+    )
+
+    assert normalized["requires_human_editorial_review"] is True
