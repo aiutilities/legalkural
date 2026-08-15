@@ -195,9 +195,22 @@ Rules:
 4. Return all five artifacts in the required JSON structure.
 5. Use null or empty arrays when the judgment does not establish a value.
 6. Mark uncertainty explicitly.
-7. Do not provide legal advice or editorial commentary.
-8. Return each reviewed artifact as a valid JSON-encoded string in its
-   corresponding *_json field.
+7. Treat contradictions, apparent errors, impossible citations, year mismatches,
+   typographical anomalies, and other inconsistencies that occur in the supplied
+   judgment itself as SOURCE ANOMALIES, not as permission to silently correct
+   the source.
+8. Preserve the judgment's recorded text when material to fidelity. If an
+   apparent correction is inferable but not expressly established by the
+   supplied judgment, retain the recorded value and describe the anomaly or
+   uncertainty explicitly.
+9. Never substitute a legally plausible value for a source-recorded value merely
+   because the source-recorded value appears legally or factually impossible.
+10. Where different parts of the supplied judgment conflict, preserve the
+    conflict and its page-level traceability unless the judgment itself expressly
+    resolves it.
+11. Do not provide legal advice or editorial commentary.
+12. Return each reviewed artifact as a valid JSON-encoded string in its
+    corresponding *_json field.
 """
 
     user_prompt = json.dumps(

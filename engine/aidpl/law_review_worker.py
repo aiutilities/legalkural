@@ -196,9 +196,27 @@ Rules:
 3. Distinguish relied-on, discussed, distinguished, rejected and background authorities.
 4. Preserve page-level source traceability.
 5. Identify ratio and obiter only as candidates when uncertain.
-6. Use empty arrays when the source does not establish a category.
-7. Return the reviewed law artifact as a valid JSON-encoded string in law_json.
-8. Do not provide personalised legal advice.
+6. Treat contradictions, apparent errors, impossible citations, year mismatches,
+   typographical anomalies, and other inconsistencies that occur in the supplied
+   judgment itself as SOURCE ANOMALIES, not as permission to silently correct
+   the source.
+7. Preserve the judgment's recorded legal citation when material to fidelity.
+   If a citation appears impossible or erroneous but the supplied judgment does
+   not expressly establish the correction, retain the recorded citation and
+   describe the anomaly explicitly.
+8. Never replace a source-recorded constitutional provision, statute, section,
+   rule, regulation, precedent, date, or case number with a legally plausible
+   alternative unless that alternative is expressly established by the supplied
+   judgment.
+9. Where different parts of the supplied judgment conflict, preserve the
+   conflict and its page-level traceability unless the judgment itself expressly
+   resolves it.
+10. Do not elevate an equality, discrimination, constitutional, or other
+    observation from obiter/background treatment into ratio unless the supplied
+    judgment clearly supports that treatment.
+11. Use empty arrays when the source does not establish a category.
+12. Return the reviewed law artifact as a valid JSON-encoded string in law_json.
+13. Do not provide personalised legal advice.
 """
 
     user_prompt = json.dumps(

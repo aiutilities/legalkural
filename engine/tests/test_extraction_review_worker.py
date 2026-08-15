@@ -3,7 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from aidpl.extraction_review_worker import run_review
+from aidpl.extraction_review_worker import (
+    run_review,
+    build_prompt,
+)
 
 
 def create_case(root: Path) -> None:
@@ -135,3 +138,19 @@ def test_decode_live_review() -> None:
 
     assert reviewed["metadata"]["status"] == "REVIEWED"
     assert reviewed["review_summary"]["status"] == "COMPLETE"
+
+
+def test_b11_r2_prompt_preserves_source_anomalies():
+    system_prompt, _ = build_prompt(
+        "LK-TEST",
+        "W.P.No.1 of 2025; advocate table says W.P.No.1 of 2024.",
+        {},
+    )
+
+    normalized = " ".join(system_prompt.split())
+
+    assert "SOURCE ANOMALIES" in system_prompt
+    assert "silently correct" in normalized
+    assert "legally plausible value" in normalized
+    assert "different parts" in normalized
+    assert "page-level traceability" in normalized

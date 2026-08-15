@@ -9,6 +9,7 @@ from aidpl.law_review_worker import (
     canonicalize_law_contract,
     decode_live_review,
     run_review,
+    build_prompt,
 )
 
 
@@ -201,3 +202,22 @@ def test_live_requires_authorization(tmp_path: Path) -> None:
             max_source_characters=1000,
             allow_live=False,
         )
+
+
+def test_b11_r2_prompt_preserves_impossible_source_citation():
+    system_prompt, _ = build_prompt(
+        "LK-TEST",
+        "The discrimination violates Articles 14 and 19(1)(8).",
+        {},
+        {},
+        {},
+    )
+
+    normalized = " ".join(system_prompt.split())
+
+    assert "SOURCE ANOMALIES" in system_prompt
+    assert "silently correct" in normalized
+    assert "source-recorded constitutional provision" in normalized
+    assert "legally plausible alternative" in normalized
+    assert "obiter" in normalized
+    assert "ratio" in normalized
