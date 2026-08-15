@@ -24,11 +24,70 @@ def text_of(item: Any) -> str:
     if isinstance(item, str):
         return " ".join(item.split())
     if isinstance(item, dict):
-        for key in ("text", "question", "fact", "finding", "event"):
+        for key in (
+            "text",
+            "question",
+            "fact",
+            "finding",
+            "event",
+            "article",
+            "name",
+            "case_name",
+        ):
             value = item.get(key)
             if value:
                 return " ".join(str(value).split())
     return ""
+
+
+def law_text(item: Any) -> str:
+    if isinstance(item, str):
+        return " ".join(item.split())
+
+    if not isinstance(item, dict):
+        return ""
+
+    identity = ""
+
+    if item.get("article"):
+        identity = str(item["article"])
+    elif item.get("case_name"):
+        identity = str(item["case_name"])
+        citation = item.get("citation")
+        if citation:
+            identity += f" — {citation}"
+    elif item.get("name"):
+        identity = str(item["name"])
+        provision = item.get("section") or item.get("provision")
+        if provision:
+            identity += f" — {provision}"
+
+    treatment = item.get("treatment")
+    usage = item.get("how_court_used")
+
+    parts = []
+
+    if identity:
+        parts.append(identity)
+
+    if treatment:
+        parts.append(f"[{treatment}]")
+
+    if usage:
+        parts.append(str(usage))
+
+    return " ".join(" ".join(parts).split())
+
+
+def law_bullet_list(items: list[Any], limit: int = 8) -> str:
+    rows = []
+
+    for item in items[:limit]:
+        value = law_text(item)
+        if value:
+            rows.append(f"- {value}")
+
+    return "\n".join(rows) if rows else "- No verified item available."
 
 
 def first(items: list[Any], fallback: str) -> str:
@@ -77,6 +136,13 @@ def build_article(
         "Verified facts, applicable law and fair procedure must guide judgment."
     )
 
+    tamil = kural.get("kural_inspired_tamil")
+    kural_tamil = (
+        f"> **{tamil}**"
+        if tamil
+        else "> **Tamil editorial rendering pending.**"
+    )
+
     return f"""# {title}
 
 **Reference Case:** {case_id}
@@ -96,6 +162,8 @@ def build_article(
 ## Kural-Inspired Insight
 
 > **{kural.get('kural_inspired_english', 'Editorial insight pending.')}**
+
+{kural_tamil}
 
 This is original Legal Kural editorial writing. It is not an authentic
 Thirukkural verse.
@@ -126,18 +194,18 @@ Thirukkural verse.
 
 ### Constitutional Provisions
 
-{bullet_list(law.get('constitutional_provisions', []), 8)}
+{law_bullet_list(law.get('constitutional_provisions', []), 8)}
 
 ### Statutes and Regulations
 
-{bullet_list(
+{law_bullet_list(
     law.get('statutes', []) + law.get('regulations', []),
     12,
 )}
 
 ### Precedents
 
-{bullet_list(law.get('precedents', []), 8)}
+{law_bullet_list(law.get('precedents', []), 8)}
 
 ## How the Judge Reasoned
 

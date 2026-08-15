@@ -59,3 +59,83 @@ def test_run_editor(tmp_path: Path) -> None:
     article = (output / "10-article/article.md").read_text(encoding="utf-8")
     assert "Proof Must Lead" in article
     assert "not personalised legal advice" in article
+
+
+def test_build_article_propagates_structured_law_and_tamil_kural():
+    from aidpl.editor_worker import build_article
+
+    article = build_article(
+        "LK-TEST",
+        {"court": "Madras High Court", "judge": "Test Judge"},
+        {"events": []},
+        {"material_facts": []},
+        {"issues": [{"question": "What tariff applies?"}]},
+        {
+            "documentary_evidence": [],
+            "missing_evidence": [],
+        },
+        {
+            "constitutional_provisions": [
+                {
+                    "article": "Article 14 (Constitution of India)",
+                    "treatment": "discussed",
+                    "how_court_used": "Used in the discrimination analysis.",
+                }
+            ],
+            "statutes": [
+                {
+                    "name": "Example Municipal Act",
+                    "section": "Section 2(1)",
+                    "treatment": "relied-on",
+                    "how_court_used": "Used to define residence.",
+                }
+            ],
+            "regulations": [
+                {
+                    "name": "Example Regulations",
+                    "provision": "Regulation 4(ii)",
+                    "treatment": "rejected",
+                    "how_court_used": "Commercial classification was rejected.",
+                }
+            ],
+            "precedents": [
+                {
+                    "case_name": "Example v. State",
+                    "citation": "2026 SCC Test 1",
+                    "treatment": "relied-on",
+                    "how_court_used": "Applied the recipient-perspective test.",
+                }
+            ],
+        },
+        {
+            "reasoning_steps": [],
+            "ratio_candidates": [],
+        },
+        {
+            "outcome": "Allowed",
+            "operative_directions": [],
+            "limitations": [],
+        },
+        {
+            "compressed_title": "Use Over Label",
+            "legal_holding": "Residential end-use governs.",
+            "universal_principle": "Function prevails over label.",
+            "kural_inspired_english": "Use reveals the truth.",
+            "kural_inspired_tamil": "பயனே உண்மையை வெளிப்படுத்தும்.",
+        },
+    )
+
+    assert "Article 14 (Constitution of India)" in article
+    assert "Used in the discrimination analysis." in article
+
+    assert "Example Municipal Act — Section 2(1)" in article
+    assert "Used to define residence." in article
+
+    assert "Example Regulations — Regulation 4(ii)" in article
+    assert "Commercial classification was rejected." in article
+
+    assert "Example v. State — 2026 SCC Test 1" in article
+    assert "Applied the recipient-perspective test." in article
+
+    assert "Use reveals the truth." in article
+    assert "பயனே உண்மையை வெளிப்படுத்தும்." in article
