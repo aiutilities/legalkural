@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from aidpl.reasoning_review_worker import (
+    normalize_decision_contract,
     build_prompt,
     decode_live_review,
     run_review,
@@ -263,3 +264,68 @@ def test_normalize_rich_decision_contract() -> None:
     assert normalized["outcome"] == "Allowed"
     assert normalized["operative_directions"]
     assert normalized["relief_granted"]
+
+
+def test_normalize_decision_preserves_source_grounded_deterministic_costs():
+    provider_decision = {
+        "outcome": "Allowed",
+        "operative_directions": [],
+        "relief_granted": [],
+        "relief_denied": [],
+        "costs": "No cost.",
+        "limitations": [],
+        "source_traceability": [],
+    }
+    reasoning = {
+        "limitations": [],
+    }
+    deterministic_decision = {
+        "costs": "No order as to costs.",
+        "source_traceability": [
+            {
+                "category": "costs",
+                "source_pages": [54],
+            }
+        ],
+    }
+
+    normalized = normalize_decision_contract(
+        "LK-TEST-0001",
+        provider_decision,
+        reasoning,
+        deterministic_decision=deterministic_decision,
+    )
+
+    assert normalized["costs"] == "No order as to costs."
+    assert {
+        "category": "costs",
+        "source_pages": [54],
+    } in normalized["source_traceability"]
+
+
+def test_normalize_decision_does_not_preserve_untraced_deterministic_costs():
+    provider_decision = {
+        "outcome": "Allowed",
+        "operative_directions": [],
+        "relief_granted": [],
+        "relief_denied": [],
+        "costs": "No cost.",
+        "limitations": [],
+        "source_traceability": [],
+    }
+    reasoning = {
+        "limitations": [],
+    }
+    deterministic_decision = {
+        "costs": "No order as to costs.",
+        "source_traceability": [],
+    }
+
+    normalized = normalize_decision_contract(
+        "LK-TEST-0001",
+        provider_decision,
+        reasoning,
+        deterministic_decision=deterministic_decision,
+    )
+
+    assert normalized["costs"] == "No cost."

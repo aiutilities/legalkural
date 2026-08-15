@@ -423,6 +423,7 @@ def normalize_decision_contract(
     case_id: str,
     payload: dict[str, Any],
     reasoning: dict[str, Any],
+    deterministic_decision: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     required = {
         "schema_version",
@@ -511,6 +512,36 @@ def normalize_decision_contract(
             str(costs_value)
             if costs_value not in (None, "")
             else None
+        )
+
+    # Preserve a deterministic costs finding when it is already
+    # source-grounded. Model review may refine legal reasoning, but it
+    # must not replace a source-traced operative costs finding with an
+    # untraced paraphrase.
+    deterministic_costs = None
+    deterministic_costs_pages: list[Any] = []
+
+    if deterministic_decision:
+        deterministic_costs = deterministic_decision.get("costs")
+
+        for item in deterministic_decision.get(
+            "source_traceability", []
+        ):
+            if (
+                isinstance(item, dict)
+                and item.get("category") == "costs"
+            ):
+                deterministic_costs_pages.extend(
+                    _as_list(item.get("source_pages"))
+                )
+
+    if (
+        deterministic_costs not in (None, "")
+        and deterministic_costs_pages
+    ):
+        costs = str(deterministic_costs)
+        costs_pages = list(
+            dict.fromkeys(deterministic_costs_pages)
         )
 
     traceability = []
@@ -665,6 +696,7 @@ def run_review(
             case_id,
             reviewed["decision"],
             reviewed["reasoning"],
+            deterministic_decision=decision,
         )
 
         provider_metadata = {
