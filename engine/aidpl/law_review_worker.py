@@ -126,6 +126,26 @@ def canonicalize_law_contract(
     if not isinstance(authorities, dict):
         authorities = {}
 
+    recognized_substantive_fields = (
+        *LAW_AUTHORITY_FAMILIES,
+        *LAW_OPTIONAL_FIELDS,
+        "source_traceability",
+    )
+
+    has_recognized_list = any(
+        isinstance(payload.get(field), list)
+        for field in recognized_substantive_fields
+    ) or any(
+        isinstance(authorities.get(field), list)
+        for field in LAW_AUTHORITY_FAMILIES
+    )
+
+    if not has_recognized_list:
+        raise ValueError(
+            "Provider law payload contains no recognized substantive "
+            "law artifact lists; refusing to canonicalize to an empty artifact."
+        )
+
     canonical: dict[str, Any] = {
         "schema_version": str(payload.get("schema_version") or "1.0"),
         "reference_case_id": str(
@@ -157,6 +177,43 @@ def canonicalize_law_contract(
     )
 
     return canonical
+
+
+def substantive_law_count(payload: dict[str, Any]) -> int:
+    """Count substantive entries in a canonical Law artifact."""
+
+    families = (
+        *LAW_AUTHORITY_FAMILIES,
+        "ratio_candidates",
+        "obiter_candidates",
+        "source_traceability",
+    )
+
+    return sum(
+        len(value)
+        for field in families
+        if isinstance(
+            (value := payload.get(field)),
+            list,
+        )
+    )
+
+
+def guard_against_destructive_law_collapse(
+    baseline: dict[str, Any],
+    reviewed: dict[str, Any],
+) -> None:
+    """Fail closed if live review destroys a substantive Law artifact."""
+
+    baseline_count = substantive_law_count(baseline)
+    reviewed_count = substantive_law_count(reviewed)
+
+    if baseline_count > 0 and reviewed_count == 0:
+        raise ValueError(
+            "Reviewed law artifact destructively collapsed from "
+            f"{baseline_count} substantive entries to zero; "
+            "refusing to persist empty live review output."
+        )
 
 
 def mock_review(law: dict[str, Any]) -> dict[str, Any]:
@@ -314,6 +371,11 @@ def run_review(
 
     reviewed["law"] = canonicalize_law_contract(
         case_id,
+        reviewed["law"],
+    )
+
+    guard_against_destructive_law_collapse(
+        law,
         reviewed["law"],
     )
 

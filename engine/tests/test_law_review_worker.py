@@ -10,8 +10,9 @@ from aidpl.law_review_worker import (
     decode_live_review,
     run_review,
     build_prompt,
+    guard_against_destructive_law_collapse,
+    substantive_law_count,
 )
-
 
 def create_case(root: Path) -> None:
     output = root / "output"
@@ -221,3 +222,210 @@ def test_b11_r2_prompt_preserves_impossible_source_citation():
     assert "legally plausible alternative" in normalized
     assert "obiter" in normalized
     assert "ratio" in normalized
+
+
+def test_b11_r4_r2_canonicalization_rejects_unrecognized_payload() -> None:
+    payload = {
+        "schema_version": "1.0",
+        "reference_case_id": "LK-TEST",
+        "status": "REVIEWED_CONSOLIDATED",
+        "review_summary": {
+            "status": "REVIEWED_CONSOLIDATED",
+        },
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="no recognized substantive law artifact lists",
+    ):
+        canonicalize_law_contract(
+            "LK-TEST",
+            payload,
+        )
+
+
+def test_b11_r4_r2_canonicalization_accepts_explicit_empty_contract() -> None:
+    payload = {
+        "schema_version": "1.0",
+        "reference_case_id": "LK-TEST",
+        "constitutional_provisions": [],
+        "statutes": [],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [],
+        "obiter_candidates": [],
+        "quality_notes": [],
+        "source_traceability": [],
+    }
+
+    normalized = canonicalize_law_contract(
+        "LK-TEST",
+        payload,
+    )
+
+    assert normalized["reference_case_id"] == "LK-TEST"
+    assert normalized["status"] == "MODEL_REVIEWED_LIVE"
+    assert normalized["constitutional_provisions"] == []
+    assert normalized["ratio_candidates"] == []
+
+
+def test_b11_r4_r2_canonicalization_preserves_source_anomaly() -> None:
+    payload = {
+        "schema_version": "1.0",
+        "reference_case_id": "LK-TEST",
+        "constitutional_provisions": [
+            {
+                "article": (
+                    "Article 19(1)(8) "
+                    "(as recorded in judgment)"
+                ),
+                "how_court_used": (
+                    "Source-recorded constitutional anomaly."
+                ),
+                "pages": [27],
+                "treatment": "discussed",
+            }
+        ],
+        "statutes": [],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [],
+        "obiter_candidates": [],
+        "quality_notes": [
+            "Article 19(1)(8) is preserved as a SOURCE ANOMALY."
+        ],
+        "source_traceability": [],
+    }
+
+    normalized = canonicalize_law_contract(
+        "LK-TEST",
+        payload,
+    )
+
+    assert len(normalized["constitutional_provisions"]) == 1
+    assert (
+        normalized["constitutional_provisions"][0]["article"]
+        == "Article 19(1)(8) (as recorded in judgment)"
+    )
+    assert "SOURCE ANOMALY" in normalized["quality_notes"][0]
+
+def test_b11_r4_r3_substantive_law_count() -> None:
+    payload = {
+        "constitutional_provisions": [{"article": "Article 226"}],
+        "statutes": [{"name": "Example Act"}],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [{"text": "Ratio"}],
+        "obiter_candidates": [],
+        "source_traceability": [
+            {
+                "category": "constitutional_provisions",
+                "source_pages": [1],
+            }
+        ],
+        "quality_notes": [],
+    }
+
+    assert substantive_law_count(payload) == 4
+
+
+def test_b11_r4_r3_rejects_total_live_collapse() -> None:
+    baseline = {
+        "constitutional_provisions": [{"article": "Article 226"}],
+        "statutes": [{"name": "Example Act"}],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [{"text": "Ratio"}],
+        "obiter_candidates": [],
+        "source_traceability": [
+            {
+                "category": "constitutional_provisions",
+                "source_pages": [1],
+            }
+        ],
+        "quality_notes": [],
+    }
+
+    reviewed = {
+        "constitutional_provisions": [],
+        "statutes": [],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [],
+        "obiter_candidates": [],
+        "source_traceability": [],
+        "quality_notes": [],
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="destructively collapsed",
+    ):
+        guard_against_destructive_law_collapse(
+            baseline,
+            reviewed,
+        )
+
+
+def test_b11_r4_r3_allows_legitimate_substantive_review() -> None:
+    baseline = {
+        "constitutional_provisions": [{"article": "Article 226"}],
+        "statutes": [{"name": "Example Act"}],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [{"text": "Old ratio"}],
+        "obiter_candidates": [],
+        "source_traceability": [],
+        "quality_notes": [],
+    }
+
+    reviewed = {
+        "constitutional_provisions": [
+            {
+                "article": (
+                    "Article 19(1)(8) "
+                    "(as recorded in judgment)"
+                )
+            }
+        ],
+        "statutes": [],
+        "regulations": [],
+        "notifications": [],
+        "precedents": [],
+        "legal_doctrines": [],
+        "ratio_candidates": [],
+        "obiter_candidates": [
+            {
+                "text": (
+                    "Equality/discrimination observation "
+                    "retained as obiter."
+                )
+            }
+        ],
+        "source_traceability": [
+            {
+                "category": "constitutional_provisions",
+                "source_pages": [27],
+            }
+        ],
+        "quality_notes": [
+            "Article 19(1)(8) preserved as SOURCE ANOMALY."
+        ],
+    }
+
+    guard_against_destructive_law_collapse(
+        baseline,
+        reviewed,
+    )
