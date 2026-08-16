@@ -6,12 +6,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .manual_task_detection import create_detected_tasks
+
 from .manual_tasks import (
     VALID_STATUSES,
     cancel_task,
     complete_task,
     get_task,
     list_tasks,
+    task_store_path,
 )
 
 
@@ -37,6 +40,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="command",
         required=True,
     )
+
+    sync_parser = subparsers.add_parser(
+        "sync",
+        help="Detect and persist outstanding manual tasks for a case.",
+    )
+    sync_parser.add_argument("--case-id", required=True)
+    sync_parser.add_argument("--case-root", type=Path, required=True)
 
     list_parser = subparsers.add_parser(
         "list",
@@ -114,6 +124,36 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace) -> dict[str, Any] | list[dict[str, Any]]:
+    if args.command == "sync":
+        task_store = task_store_path(args.case_root)
+        result = create_detected_tasks(
+            args.case_id,
+            args.case_root,
+            args.case_root,
+        )
+
+        print(f"case_id: {args.case_id}")
+        print(f"task_store: {task_store}")
+        print(f"detected: {result['detected']}")
+        print(f"created: {result['created']}")
+        print(
+            "skipped_existing: "
+            f"{result['skipped_existing']}"
+        )
+
+        for task in result["created_tasks"]:
+            print(
+                "CREATED "
+                f"{task['task_id']} "
+                f"{task['task_type']} "
+                f"{task['source_agent']}"
+            )
+
+        for task_key in result["skipped_task_keys"]:
+            print(f"SKIPPED_EXISTING {task_key}")
+
+        return result
+
     if args.command == "list":
         return list_tasks(
             args.case_root,
