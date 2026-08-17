@@ -11,8 +11,8 @@ Powered by:
 
 Current Sprint:
 
-LK-001 — ThinkingOS Validation
+Sprint 56 — Weekly Journal Generation Foundation
 
 Objective:
 
-Validate ThinkingOS using one real court judgment before building automation.
+Build an offline-first, deterministic, editor-selected and print-ready weekly journal workflow from certified LegalKural articles.
