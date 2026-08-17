@@ -171,7 +171,7 @@ def main() -> int:
     )
 
     if args.command == "whoami":
-        output = client.site_summary()
+        output = client.current_user()
     elif args.command == "site":
         output = client.site_summary()
     elif args.command == "site-raw":

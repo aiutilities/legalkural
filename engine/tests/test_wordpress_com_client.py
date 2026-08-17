@@ -89,3 +89,40 @@ def test_create_post() -> None:
     assert result["id"] == 10
     assert captured["method"] == "POST"
     assert captured["auth"] == "Bearer token"
+
+
+def test_current_user_uses_site_scoped_users_me() -> None:
+    captured = {}
+
+    def transport(
+        request,
+        _timeout,
+    ) -> WordPressComHttpResponse:
+        captured["method"] = request.get_method()
+        captured["url"] = request.full_url
+        captured["auth"] = request.headers.get(
+            "Authorization"
+        )
+
+        return WordPressComHttpResponse(
+            200,
+            {},
+            b'{"id": 42, "name": "Existing Author", "slug": "existing-author"}',
+        )
+
+    client = WordPressComClient(
+        config(),
+        transport=transport,
+    )
+
+    result = client.current_user()
+
+    assert result["id"] == 42
+    assert result["name"] == "Existing Author"
+    assert captured["method"] == "GET"
+    assert captured["auth"] == "Bearer token"
+    assert captured["url"] == (
+        "https://public-api.wordpress.com"
+        "/wp/v2/sites/56733028/users/me"
+        "?context=edit"
+    )

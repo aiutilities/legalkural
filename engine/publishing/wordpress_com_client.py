@@ -187,6 +187,27 @@ class WordPressComClient:
             f"{last_error}"
         ) from last_error
 
+    def current_user(self) -> dict[str, Any]:
+        result = self.request(
+            "GET",
+            "users/me",
+            query={"context": "edit"},
+        )
+
+        if not isinstance(result, dict):
+            raise WordPressResponseError(
+                "WordPress.com current-user response must be an object."
+            )
+
+        user_id = result.get("id")
+
+        if not isinstance(user_id, int):
+            raise WordPressResponseError(
+                "WordPress.com current-user response is missing integer id."
+            )
+
+        return result
+
     def site(self) -> dict[str, Any]:
         result = self.request("GET", "")
 
