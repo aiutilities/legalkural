@@ -179,14 +179,25 @@ def manual_gate_open(plan: dict[str, Any]) -> bool:
     return blocking_tasks_open(case_root)
 
 
+def assert_manual_execution_allowed(
+    plan: dict[str, Any],
+) -> None:
+    if manual_gate_open(plan):
+        raise ValueError(
+            "OPEN blocking manual task prevents execution."
+        )
+
+
 def start_agent(plan: dict[str, Any], agent_id: str) -> None:
     refresh_readiness(plan)
     agent = find_agent(plan, agent_id)
 
-    if manual_gate_open(plan):
+    try:
+        assert_manual_execution_allowed(plan)
+    except ValueError as exc:
         raise ValueError(
             "OPEN blocking manual task prevents agent execution."
-        )
+        ) from exc
 
     if agent["status"] != "READY":
         raise ValueError(

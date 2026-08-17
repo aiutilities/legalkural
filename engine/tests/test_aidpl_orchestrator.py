@@ -136,3 +136,30 @@ def test_completed_blocking_manual_task_does_not_prevent_agent_start(
     start_agent(plan, "LK-INTAKE")
 
     assert find_agent(plan, "LK-INTAKE")["status"] == "IN_PROGRESS"
+
+
+def test_assert_manual_execution_allowed_rejects_open_blocking_task(
+    tmp_path,
+):
+    from aidpl.manual_tasks import create_task
+    from aidpl.orchestrator import (
+        assert_manual_execution_allowed,
+    )
+
+    plan = build_plan("LK-GATE-ASSERT-001", tmp_path)
+
+    create_task(
+        case_root=tmp_path,
+        case_id="LK-GATE-ASSERT-001",
+        task_type="LEGAL_FIDELITY_REVIEW",
+        title="Human legal review required",
+        instructions="Complete human legal review.",
+        source_agent="TEST",
+        blocking=True,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="OPEN blocking manual task prevents execution",
+    ):
+        assert_manual_execution_allowed(plan)

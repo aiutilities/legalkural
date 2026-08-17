@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .orchestrator import assert_manual_execution_allowed
+
 STAGE_ORDER = [
     "LK-EXTRACT",
     "LK-LAW",
@@ -1399,6 +1401,11 @@ def execute_remediation(
 ) -> dict[str, Any]:
     case_root = case_root.expanduser().resolve()
     qa_path = case_root / "evidence/qa-model-review-report.json"
+    plan_path = case_root / "aidpl-plan.json"
+
+    execution_plan = read_json(plan_path)
+    assert_manual_execution_allowed(execution_plan)
+
     iterations: list[dict[str, Any]] = []
 
     for iteration in range(1, max_iterations + 1):

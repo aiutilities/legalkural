@@ -7,6 +7,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .orchestrator import (
+    assert_manual_execution_allowed,
+    load_plan,
+)
 from .providers import ModelRequest, create_provider
 
 
@@ -247,6 +251,11 @@ def run_review(
     allow_live: bool,
 ) -> dict[str, Any]:
     case_root = case_root.expanduser().resolve()
+
+    plan_path = case_root / "aidpl-plan.json"
+    if plan_path.exists():
+        plan = load_plan(plan_path)
+        assert_manual_execution_allowed(plan)
 
     if provider_name != "mock" and not allow_live:
         raise ValueError(

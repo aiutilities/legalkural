@@ -518,6 +518,17 @@ def test_remediation_runtime_builds_plan_with_case_root(
         capturing_build_plan,
     )
 
+    from aidpl.orchestrator import build_plan, save_plan
+
+    execution_plan = build_plan(
+        case_id="LK-TEST",
+        case_root=case_root,
+    )
+    save_plan(
+        case_root / "aidpl-plan.json",
+        execution_plan,
+    )
+
     result = runtime.execute_remediation(
         root=tmp_path,
         case_id="LK-TEST",
@@ -1790,3 +1801,87 @@ def test_b10_r4_explicit_extract_law_plan_has_no_reason_or_later_stage():
     assert "LK-KURAL" not in stages
     assert "LK-EDITOR" not in stages
     assert "LK-QA" not in stages
+
+
+def test_b5_4_remediation_runtime_respects_open_blocking_manual_task(
+    tmp_path,
+    monkeypatch,
+):
+    import json
+
+    import aidpl.remediation_runtime as runtime
+    from aidpl.manual_tasks import create_task
+    from aidpl.orchestrator import build_plan, save_plan
+
+    case_id = "LK-B54-REMEDIATION-GATE"
+    case_root = tmp_path / case_id
+    evidence = case_root / "evidence"
+
+    evidence.mkdir(parents=True)
+
+    execution_plan = build_plan(
+        case_id=case_id,
+        case_root=case_root,
+    )
+    save_plan(
+        case_root / "aidpl-plan.json",
+        execution_plan,
+    )
+
+    create_task(
+        case_root=case_root,
+        case_id=case_id,
+        task_type="LEGAL_FIDELITY_REVIEW",
+        title="Founder review required",
+        instructions=(
+            "Complete required human review before remediation."
+        ),
+        source_agent="TEST",
+        blocking=True,
+    )
+
+    (evidence / "qa-model-review-report.json").write_text(
+        json.dumps(
+            {
+                "verdict": "FAIL",
+                "confidence": 1.0,
+                "findings": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    called = False
+
+    def forbidden_run_command(*args, **kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError(
+            "remediation subprocess execution must not begin "
+            "while a blocking manual task is OPEN"
+        )
+
+    monkeypatch.setattr(
+        runtime,
+        "run_command",
+        forbidden_run_command,
+    )
+
+    try:
+        runtime.execute_remediation(
+            root=tmp_path,
+            case_id=case_id,
+            case_root=case_root,
+            provider="mock",
+            allow_live=False,
+            max_iterations=1,
+        )
+    except ValueError as exc:
+        assert "OPEN blocking manual task" in str(exc)
+    else:
+        raise AssertionError(
+            "Expected remediation runtime to fail closed "
+            "for OPEN blocking manual task"
+        )
+
+    assert called is False
