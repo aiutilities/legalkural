@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .manual_tasks import blocking_tasks_open
+
 AGENT_SEQUENCE = [
     "LK-INTAKE",
     "LK-EXTRACT",
@@ -152,6 +154,7 @@ def refresh_readiness(plan: dict[str, Any]) -> None:
     plan["publication"]["ready"] = (
         plan["publication"]["qa_status"] == "PASS"
         and plan["publication"]["founder_authorization"] == "AUTHORIZED"
+        and not manual_gate_open(plan)
     )
 
     if all(agent["status"] == "COMPLETE" for agent in plan["agents"]):
@@ -171,9 +174,19 @@ def find_agent(plan: dict[str, Any], agent_id: str) -> dict[str, Any]:
     return agents[agent_id]
 
 
+def manual_gate_open(plan: dict[str, Any]) -> bool:
+    case_root = Path(plan["case_root"]).expanduser().resolve()
+    return blocking_tasks_open(case_root)
+
+
 def start_agent(plan: dict[str, Any], agent_id: str) -> None:
     refresh_readiness(plan)
     agent = find_agent(plan, agent_id)
+
+    if manual_gate_open(plan):
+        raise ValueError(
+            "OPEN blocking manual task prevents agent execution."
+        )
 
     if agent["status"] != "READY":
         raise ValueError(
