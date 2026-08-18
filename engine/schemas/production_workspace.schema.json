@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://legalkural.local/schemas/production_workspace.schema.json",
+  "title": "LegalKural Production Workspace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "workspace_id", "workspace_root", "paths"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "workspace_id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$"
+    },
+    "workspace_root": {"type": "string", "minLength": 1},
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generated_evidence",
+        "candidates",
+        "editions",
+        "archive",
+        "backups",
+        "runtime_evidence",
+        "operator_logs"
+      ],
+      "properties": {
+        "generated_evidence": {"type": "string", "minLength": 1},
+        "candidates": {"type": "string", "minLength": 1},
+        "editions": {"type": "string", "minLength": 1},
+        "archive": {"type": "string", "minLength": 1},
+        "backups": {"type": "string", "minLength": 1},
+        "runtime_evidence": {"type": "string", "minLength": 1},
+        "operator_logs": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
