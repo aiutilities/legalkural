@@ -45,3 +45,19 @@ __all__ += [
     "validate_production_backup_evidence",
     "verify_production_backup",
 ]
+
+from .restore import (
+    RESTORE_SCHEMA_VERSION,
+    ProductionRestoreError,
+    compute_restore_evidence_sha256,
+    restore_production_backup,
+    validate_production_restore_evidence,
+)
+
+__all__ += [
+    "RESTORE_SCHEMA_VERSION",
+    "ProductionRestoreError",
+    "compute_restore_evidence_sha256",
+    "restore_production_backup",
+    "validate_production_restore_evidence",
+]
