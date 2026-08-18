@@ -15,6 +15,10 @@ from .candidate import (
     JournalCandidateError,
     validate_candidate_revision,
 )
+from .manifest import (
+    JournalManifestError,
+    validate_finalized_manifest,
+)
 
 
 REVISION_WIDTH = 6
@@ -251,6 +255,10 @@ def store_candidate_revision(
         )
 
     candidate_directory.mkdir(exist_ok=True)
+    if (candidate_directory / "finalization").exists():
+        raise JournalCandidateStoreError(
+            "candidate is finalized and cannot be revised"
+        )
     if revisions_directory.exists() and revisions_directory.is_symlink():
         raise JournalCandidateStoreError(
             "revisions directory cannot be a symlink"
@@ -349,3 +357,179 @@ def store_candidate_revision(
         ).as_posix(),
         "status": "STORED",
     }
+
+
+
+def store_candidate_finalization(
+    storage_root: Path,
+    manifest: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Atomically store a manifest that permanently locks a candidate."""
+
+    try:
+        validate_finalized_manifest(manifest)
+    except JournalManifestError as exc:
+        raise JournalCandidateStoreError(
+            f"finalized manifest is invalid: {exc}"
+        ) from exc
+
+    value = deepcopy(dict(manifest))
+    lineage = value.get("candidate_lineage")
+    if not isinstance(lineage, Mapping):
+        raise JournalCandidateStoreError(
+            "finalized manifest has no candidate lineage"
+        )
+
+    candidate_id = lineage["candidate_id"]
+    root = _storage_root(storage_root)
+    candidate_directory = _candidate_directory(root, candidate_id)
+    if not candidate_directory.is_dir():
+        raise JournalCandidateStoreError(
+            f"candidate does not exist: {candidate_id}"
+        )
+
+    revisions = list_candidate_revisions(root, candidate_id)
+    if not revisions:
+        raise JournalCandidateStoreError(
+            f"candidate has no stored revisions: {candidate_id}"
+        )
+
+    latest = revisions[-1]
+    if lineage["revision_number"] != latest["revision_number"]:
+        raise JournalCandidateStoreError(
+            "manifest does not finalize the latest candidate revision"
+        )
+    if lineage["candidate_sha256"] != latest["candidate_sha256"]:
+        raise JournalCandidateStoreError(
+            "manifest candidate hash does not match stored revision"
+        )
+    if value["journal_id"] != latest["journal_id"]:
+        raise JournalCandidateStoreError(
+            "manifest journal_id does not match candidate"
+        )
+
+    target = candidate_directory / "finalization"
+    if target.exists():
+        raise JournalCandidateStoreError(
+            "candidate is already finalized"
+        )
+
+    temporary = Path(
+        tempfile.mkdtemp(
+            prefix=".finalization-tmp-",
+            dir=candidate_directory,
+        )
+    )
+    try:
+        output = temporary / "manifest.json"
+        payload = (
+            json.dumps(
+                value,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+        with output.open("x", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+        os.rename(temporary, target)
+
+        directory_descriptor = os.open(
+            candidate_directory,
+            os.O_RDONLY,
+        )
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+
+    stored = load_candidate_finalization(root, candidate_id)
+    return {
+        "candidate_id": candidate_id,
+        "revision_number": lineage["revision_number"],
+        "candidate_sha256": lineage["candidate_sha256"],
+        "journal_id": stored["journal_id"],
+        "manifest_sha256": stored["manifest_sha256"],
+        "manifest_file": (
+            target.relative_to(root) / "manifest.json"
+        ).as_posix(),
+        "status": "FINALIZED",
+    }
+
+
+def load_candidate_finalization(
+    storage_root: Path,
+    candidate_id: str,
+) -> dict[str, Any]:
+    """Load and verify a candidate's immutable finalized manifest."""
+
+    root = _storage_root(storage_root)
+    candidate_directory = _candidate_directory(root, candidate_id)
+    finalization = candidate_directory / "finalization"
+
+    if not finalization.exists():
+        raise JournalCandidateStoreError(
+            f"candidate is not finalized: {candidate_id}"
+        )
+    if finalization.is_symlink() or not finalization.is_dir():
+        raise JournalCandidateStoreError(
+            "candidate finalization path is unsafe"
+        )
+
+    entries = list(finalization.iterdir())
+    if len(entries) != 1 or entries[0].name != "manifest.json":
+        raise JournalCandidateStoreError(
+            "candidate finalization is incomplete"
+        )
+
+    manifest_path = finalization / "manifest.json"
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise JournalCandidateStoreError(
+            "candidate finalization manifest is unsafe"
+        )
+
+    try:
+        manifest = json.loads(
+            manifest_path.read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError) as exc:
+        raise JournalCandidateStoreError(
+            "candidate finalization manifest is invalid JSON"
+        ) from exc
+
+    try:
+        validate_finalized_manifest(manifest)
+    except JournalManifestError as exc:
+        raise JournalCandidateStoreError(
+            f"candidate finalization manifest is invalid: {exc}"
+        ) from exc
+
+    lineage = manifest.get("candidate_lineage")
+    if (
+        not isinstance(lineage, Mapping)
+        or lineage.get("candidate_id") != candidate_id
+    ):
+        raise JournalCandidateStoreError(
+            "candidate finalization identity does not match its path"
+        )
+
+    revisions = list_candidate_revisions(root, candidate_id)
+    revision_number = lineage["revision_number"]
+    if revision_number > len(revisions):
+        raise JournalCandidateStoreError(
+            "candidate finalization revision does not exist"
+        )
+    revision = revisions[revision_number - 1]
+    if revision["candidate_sha256"] != lineage["candidate_sha256"]:
+        raise JournalCandidateStoreError(
+            "candidate finalization hash lineage is invalid"
+        )
+
+    return manifest
