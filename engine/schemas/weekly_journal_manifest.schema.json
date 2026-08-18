@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LegalKural Weekly Journal Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "journal_id",
+    "edition_date",
+    "title",
+    "language",
+    "selection_status",
+    "selected_by",
+    "finalized_at_utc",
+    "articles",
+    "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "journal_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "edition_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "const": "en"
+    },
+    "selection_status": {
+      "const": "FINALIZED"
+    },
+    "selected_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "finalized_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "articles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "position",
+          "case_id",
+          "title",
+          "slug",
+          "source_payload",
+          "content_sha256"
+        ],
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "case_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "source_payload": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
