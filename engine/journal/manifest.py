@@ -261,6 +261,45 @@ def _normalize_articles(
     return normalized
 
 
+def _normalize_candidate_lineage(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise JournalManifestError(
+            "candidate_lineage must be an object"
+        )
+    if set(value) != {
+        "candidate_id",
+        "revision_number",
+        "candidate_sha256",
+    }:
+        raise JournalManifestError(
+            "candidate_lineage fields do not match the contract"
+        )
+
+    revision_number = value.get("revision_number")
+    if (
+        not isinstance(revision_number, int)
+        or isinstance(revision_number, bool)
+        or revision_number < 1
+    ):
+        raise JournalManifestError(
+            "candidate_lineage.revision_number must be positive"
+        )
+
+    return {
+        "candidate_id": _required_text(
+            value.get("candidate_id"),
+            "candidate_lineage.candidate_id",
+        ),
+        "revision_number": revision_number,
+        "candidate_sha256": _sha256(
+            value.get("candidate_sha256"),
+            "candidate_lineage.candidate_sha256",
+        ),
+    }
+
+
 def finalize_manifest(
     *,
     journal_id: str,
@@ -269,6 +308,7 @@ def finalize_manifest(
     selected_by: str,
     finalized_at_utc: str,
     articles: Sequence[Mapping[str, Any]],
+    candidate_lineage: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create an immutable, hashed weekly-journal manifest."""
 
@@ -299,6 +339,10 @@ def finalize_manifest(
         "article_count": len(normalized_articles),
         "articles": normalized_articles,
     }
+    if candidate_lineage is not None:
+        manifest["candidate_lineage"] = _normalize_candidate_lineage(
+            candidate_lineage
+        )
     manifest["manifest_sha256"] = compute_manifest_sha256(manifest)
 
     validate_finalized_manifest(manifest)
@@ -331,6 +375,16 @@ def validate_finalized_manifest(
     _required_text(manifest.get("title"), "title")
     _required_text(manifest.get("selected_by"), "selected_by")
     _utc_datetime(manifest.get("finalized_at_utc"), "finalized_at_utc")
+
+    if "candidate_lineage" in manifest:
+        supplied_lineage = manifest.get("candidate_lineage")
+        normalized_lineage = _normalize_candidate_lineage(
+            supplied_lineage
+        )
+        if dict(supplied_lineage) != normalized_lineage:
+            raise JournalManifestError(
+                "candidate_lineage is not normalized"
+            )
 
     articles = manifest.get("articles")
     normalized_articles = _normalize_articles(articles)

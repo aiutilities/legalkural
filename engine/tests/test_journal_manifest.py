@@ -228,3 +228,79 @@ def test_invalid_covered_date_range_is_rejected():
         match="covered_date_range",
     ):
         validate_finalized_manifest(manifest)
+
+
+CANDIDATE_LINEAGE = {
+    "candidate_id": "LK-CANDIDATE-2026-W34",
+    "revision_number": 2,
+    "candidate_sha256": "e" * 64,
+}
+
+
+def build_candidate_manifest():
+    return finalize_manifest(
+        journal_id="LK-JOURNAL-2026-W34",
+        edition_date="2026-08-23",
+        title="LegalKural Weekly Journal",
+        selected_by="Founder",
+        finalized_at_utc="2026-08-17T15:30:00Z",
+        articles=[ARTICLE],
+        candidate_lineage=CANDIDATE_LINEAGE,
+    )
+
+
+def test_candidate_lineage_is_preserved_and_hash_protected():
+    manifest = build_candidate_manifest()
+
+    assert manifest["candidate_lineage"] == CANDIDATE_LINEAGE
+    assert manifest["manifest_sha256"] == compute_manifest_sha256(
+        manifest
+    )
+    validate_finalized_manifest(manifest)
+
+
+def test_legacy_manifest_remains_without_candidate_lineage():
+    manifest = build_manifest()
+
+    assert "candidate_lineage" not in manifest
+    validate_finalized_manifest(manifest)
+
+
+def test_invalid_candidate_lineage_is_rejected():
+    invalid = {
+        **CANDIDATE_LINEAGE,
+        "candidate_sha256": "invalid",
+    }
+
+    with pytest.raises(
+        JournalManifestError,
+        match="candidate_lineage.candidate_sha256",
+    ):
+        finalize_manifest(
+            journal_id="LK-JOURNAL-2026-W34",
+            edition_date="2026-08-23",
+            title="LegalKural Weekly Journal",
+            selected_by="Founder",
+            finalized_at_utc="2026-08-17T15:30:00Z",
+            articles=[ARTICLE],
+            candidate_lineage=invalid,
+        )
+
+
+def test_candidate_manifest_matches_json_schema():
+    import json
+    from pathlib import Path
+
+    from jsonschema import FormatChecker, validate
+
+    schema_path = (
+        Path(__file__).parents[1]
+        / "schemas"
+        / "weekly_journal_manifest.schema.json"
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    validate(
+        instance=build_candidate_manifest(),
+        schema=schema,
+        format_checker=FormatChecker(),
+    )
