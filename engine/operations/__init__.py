@@ -27,3 +27,21 @@ __all__ += [
     "audit_production_estate",
     "validate_production_integrity_report",
 ]
+
+from .backup import (
+    BACKUP_SCHEMA_VERSION,
+    ProductionBackupError,
+    compute_backup_evidence_sha256,
+    create_production_backup,
+    validate_production_backup_evidence,
+    verify_production_backup,
+)
+
+__all__ += [
+    "BACKUP_SCHEMA_VERSION",
+    "ProductionBackupError",
+    "compute_backup_evidence_sha256",
+    "create_production_backup",
+    "validate_production_backup_evidence",
+    "verify_production_backup",
+]
