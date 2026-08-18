@@ -68,3 +68,6 @@ from .ledger import (
     plan_operation_resume, record_operation_checkpoint,
 )
 __all__ += ["ProductionOperationLedgerError","begin_operation","complete_operation","fail_operation","inspect_operation","list_operation_events","list_operations","plan_operation_resume","record_operation_checkpoint"]
+
+from .release import (ProductionReleaseError, certify_production_release, compute_release_evidence_sha256, validate_production_release_evidence)
+__all__ += ["ProductionReleaseError","certify_production_release","compute_release_evidence_sha256","validate_production_release_evidence"]

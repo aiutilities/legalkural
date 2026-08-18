@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "audit_status": {
+      "const": "PASS"
+    },
+    "backup_evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "backup_id": {
+      "type": "string"
+    },
+    "certified_at_utc": {
+      "type": "string"
+    },
+    "certified_by": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "previous_release_evidence_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "provider_requests": {
+      "const": 0
+    },
+    "public_launch_authorized": {
+      "const": false
+    },
+    "release_id": {
+      "type": "string"
+    },
+    "required_operations": {
+      "items": {
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0"
+    },
+    "security_scan": {
+      "additionalProperties": false,
+      "properties": {
+        "files_scanned": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "prohibited_files": {
+          "const": 0
+        },
+        "status": {
+          "const": "PASS"
+        }
+      },
+      "required": [
+        "status",
+        "files_scanned",
+        "prohibited_files"
+      ],
+      "type": "object"
+    },
+    "source_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "status": {
+      "const": "READY"
+    },
+    "tamil_rendered": {
+      "const": false
+    },
+    "thirukkural_algorithm_usage": {
+      "const": "TITLE_ONLY"
+    },
+    "wordpress_requests": {
+      "const": 0
+    },
+    "workspace_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "release_id",
+    "workspace_id",
+    "certified_by",
+    "certified_at_utc",
+    "source_commit",
+    "status",
+    "audit_status",
+    "backup_id",
+    "backup_evidence_sha256",
+    "previous_release_evidence_sha256",
+    "required_operations",
+    "security_scan",
+    "provider_requests",
+    "wordpress_requests",
+    "tamil_rendered",
+    "thirukkural_algorithm_usage",
+    "public_launch_authorized",
+    "evidence_sha256"
+  ],
+  "title": "LegalKural Production Release Evidence",
+  "type": "object"
+}
