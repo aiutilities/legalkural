@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 import hashlib
 import json
 from pathlib import Path
@@ -44,6 +45,22 @@ def _relative_path(path: Path, generated_root: Path) -> str:
         return path.relative_to(generated_root.parent).as_posix()
     except ValueError:
         return path.as_posix()
+
+
+def _normalized_positive_ids(value: Any) -> list[int] | None:
+    if (
+        not isinstance(value, list)
+        or not value
+        or any(
+            not isinstance(item, int)
+            or isinstance(item, bool)
+            or item <= 0
+            for item in value
+        )
+        or len(value) != len(set(value))
+    ):
+        return None
+    return sorted(value)
 
 
 def inspect_case(
@@ -144,6 +161,43 @@ def inspect_case(
     if not isinstance(link, str) or not link.startswith("https://"):
         reasons.append("published HTTPS link is missing")
 
+    published_at = evidence.get("published_at")
+    if not isinstance(published_at, str) or not published_at.strip():
+        reasons.append("publication timestamp is missing")
+    else:
+        try:
+            datetime.fromisoformat(
+                published_at.strip().replace("Z", "+00:00")
+            )
+        except ValueError:
+            reasons.append("publication timestamp is invalid")
+
+    author = evidence.get("author")
+    if (
+        not isinstance(author, int)
+        or isinstance(author, bool)
+        or author <= 0
+    ):
+        reasons.append("publication author is invalid")
+    elif payload.get("author") != author:
+        reasons.append("payload and publication authors differ")
+
+    categories = _normalized_positive_ids(evidence.get("categories"))
+    payload_categories = _normalized_positive_ids(
+        payload.get("categories")
+    )
+    if categories is None:
+        reasons.append("publication categories are invalid")
+    elif payload_categories != categories:
+        reasons.append("payload and publication categories differ")
+
+    tags = _normalized_positive_ids(evidence.get("tags"))
+    payload_tags = _normalized_positive_ids(payload.get("tags"))
+    if tags is None:
+        reasons.append("publication tags are invalid")
+    elif payload_tags != tags:
+        reasons.append("payload and publication tags differ")
+
     if reasons:
         return {
             "case_id": case_id,
@@ -165,7 +219,10 @@ def inspect_case(
         "publication_evidence_sha256": _sha256_file(evidence_path),
         "post_id": post_id,
         "published_url": link,
-        "published_at": evidence.get("published_at"),
+        "published_at": published_at.strip(),
+        "author": author,
+        "categories": categories,
+        "tags": tags,
     }
 
 
@@ -262,6 +319,17 @@ def select_articles(
                 "slug": candidate["slug"],
                 "source_payload": candidate["source_payload"],
                 "content_sha256": candidate["content_sha256"],
+                "publication_evidence": candidate[
+                    "publication_evidence"
+                ],
+                "publication_evidence_sha256": candidate[
+                    "publication_evidence_sha256"
+                ],
+                "published_url": candidate["published_url"],
+                "published_at": candidate["published_at"],
+                "author": candidate["author"],
+                "categories": list(candidate["categories"]),
+                "tags": list(candidate["tags"]),
             }
         )
 

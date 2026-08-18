@@ -49,6 +49,9 @@ def create_eligible_case(
             "excerpt": "Certified article.",
             "content": content,
             "status": "draft",
+        "author": 101,
+        "categories": [201],
+        "tags": [303, 302, 301],
         },
     )
     write_json(
@@ -63,6 +66,9 @@ def create_eligible_case(
             "content_hash": content_hash,
             "publication_performed": True,
             "published_at": "2026-08-17T14:51:33",
+        "author": 101,
+        "categories": [201],
+        "tags": [301, 302, 303],
         },
     )
 

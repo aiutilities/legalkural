@@ -49,6 +49,9 @@ def create_case(
             "content": content,
             "excerpt": "Certified article.",
             "status": "draft",
+        "author": 101,
+        "categories": [201],
+        "tags": [303, 302, 301],
         },
     )
     write_json(
@@ -63,6 +66,9 @@ def create_case(
             "content_hash": content_hash,
             "publication_performed": True,
             "published_at": "2026-08-17T14:51:33",
+        "author": 101,
+        "categories": [201],
+        "tags": [301, 302, 303],
         },
     )
     return case_root
@@ -197,3 +203,57 @@ def test_non_case_generated_directories_are_ignored(tmp_path):
 
     assert [item["case_id"] for item in report["eligible"]] == ["LK-0001"]
     assert report["rejected"] == []
+
+
+def test_discovery_preserves_normalized_publication_metadata(tmp_path):
+    generated = tmp_path / "generated"
+    create_case(generated, "LK-0001")
+    article = discover_articles(generated)["eligible"][0]
+
+    assert article["published_url"] == (
+        "https://example.test/"
+        "end-use-over-label-hostels-are-homes/"
+    )
+    assert article["published_at"] == "2026-08-17T14:51:33"
+    assert article["author"] == 101
+    assert article["categories"] == [201]
+    assert article["tags"] == [301, 302, 303]
+    assert article["publication_evidence_sha256"]
+
+
+def test_rejects_publication_taxonomy_mismatch(tmp_path):
+    generated = tmp_path / "generated"
+    case_root = create_case(generated, "LK-0001")
+    payload_path = (
+        case_root
+        / "output"
+        / "11-publication"
+        / "wordpress-final-draft-payload.json"
+    )
+    payload = json.loads(payload_path.read_text(encoding="utf-8"))
+    payload["tags"] = [999]
+    write_json(payload_path, payload)
+
+    report = discover_articles(generated)
+
+    assert report["eligible"] == []
+    assert (
+        "payload and publication tags differ"
+        in report["rejected"][0]["reasons"]
+    )
+
+
+def test_editor_selection_preserves_publication_lineage(tmp_path):
+    generated = tmp_path / "generated"
+    create_case(generated, "LK-0001")
+    report = discover_articles(generated)
+    selected = select_articles(report, ["LK-0001"])
+    article = selected[0]
+
+    assert article["author"] == 101
+    assert article["categories"] == [201]
+    assert article["tags"] == [301, 302, 303]
+    assert article["published_at"] == "2026-08-17T14:51:33"
+    assert article["published_url"].startswith("https://")
+    assert article["publication_evidence"]
+    assert article["publication_evidence_sha256"]
