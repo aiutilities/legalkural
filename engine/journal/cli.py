@@ -6,9 +6,38 @@ import argparse
 import json
 from pathlib import Path
 import sys
+from typing import Any
 
-from .discovery import discover_articles
+from .candidate import (
+    create_candidate_revision,
+    revise_candidate,
+)
+from .candidate_store import (
+    list_candidate_revisions,
+    load_candidate_revision,
+    store_candidate_revision,
+)
+from .discovery import discover_articles, select_articles
 from .workflow import build_weekly_journal, verify_journal_edition
+
+
+def _add_case_ids(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--case-id",
+        action="append",
+        dest="case_ids",
+        required=True,
+        help="Selected case ID; repeat in the intended editorial order.",
+    )
+
+
+def _add_candidate_location(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--storage-root",
+        type=Path,
+        required=True,
+    )
+    parser.add_argument("--candidate-id", required=True)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,12 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--title", required=True)
     build.add_argument("--selected-by", required=True)
     build.add_argument("--finalized-at-utc", required=True)
-    build.add_argument(
-        "--case-id",
-        action="append",
-        dest="case_ids",
-        required=True,
-    )
+    _add_case_ids(build)
 
     verify = commands.add_parser("verify")
     verify.add_argument(
@@ -48,7 +72,113 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         required=True,
     )
+
+    candidate_create = commands.add_parser("candidate-create")
+    _add_candidate_location(candidate_create)
+    candidate_create.add_argument(
+        "--generated-root",
+        type=Path,
+        default=Path("generated"),
+    )
+    candidate_create.add_argument("--journal-id", required=True)
+    candidate_create.add_argument("--edition-date", required=True)
+    candidate_create.add_argument("--title", required=True)
+    candidate_create.add_argument("--editor", required=True)
+    candidate_create.add_argument("--revised-at-utc", required=True)
+    _add_case_ids(candidate_create)
+
+    candidate_inspect = commands.add_parser("candidate-inspect")
+    _add_candidate_location(candidate_inspect)
+    candidate_inspect.add_argument("--revision", type=int)
+
+    candidate_list = commands.add_parser("candidate-list")
+    _add_candidate_location(candidate_list)
+
+    candidate_revise = commands.add_parser("candidate-revise")
+    _add_candidate_location(candidate_revise)
+    candidate_revise.add_argument(
+        "--generated-root",
+        type=Path,
+        default=Path("generated"),
+    )
+    candidate_revise.add_argument("--revised-at-utc", required=True)
+    _add_case_ids(candidate_revise)
+
     return parser
+
+
+def _create_candidate(args: argparse.Namespace) -> dict[str, Any]:
+    discovery = discover_articles(args.generated_root)
+    selected = select_articles(discovery, args.case_ids)
+    candidate = create_candidate_revision(
+        candidate_id=args.candidate_id,
+        journal_id=args.journal_id,
+        edition_date=args.edition_date,
+        title=args.title,
+        editor=args.editor,
+        revised_at_utc=args.revised_at_utc,
+        articles=selected,
+    )
+    result = store_candidate_revision(args.storage_root, candidate)
+    result["selected_case_ids"] = [
+        article["case_id"] for article in candidate["articles"]
+    ]
+    return result
+
+
+def _inspect_candidate(args: argparse.Namespace) -> dict[str, Any]:
+    return load_candidate_revision(
+        args.storage_root,
+        args.candidate_id,
+        args.revision,
+    )
+
+
+def _list_candidate(args: argparse.Namespace) -> dict[str, Any]:
+    revisions = list_candidate_revisions(
+        args.storage_root,
+        args.candidate_id,
+    )
+    return {
+        "schema_version": "1.0",
+        "candidate_id": args.candidate_id,
+        "revision_count": len(revisions),
+        "revisions": [
+            {
+                "revision_number": revision["revision_number"],
+                "candidate_sha256": revision["candidate_sha256"],
+                "previous_revision_sha256": revision[
+                    "previous_revision_sha256"
+                ],
+                "revised_at_utc": revision["revised_at_utc"],
+                "status": revision["status"],
+                "selected_case_ids": [
+                    article["case_id"]
+                    for article in revision["articles"]
+                ],
+            }
+            for revision in revisions
+        ],
+    }
+
+
+def _revise_candidate(args: argparse.Namespace) -> dict[str, Any]:
+    previous = load_candidate_revision(
+        args.storage_root,
+        args.candidate_id,
+    )
+    discovery = discover_articles(args.generated_root)
+    selected = select_articles(discovery, args.case_ids)
+    revision = revise_candidate(
+        previous,
+        revised_at_utc=args.revised_at_utc,
+        articles=selected,
+    )
+    result = store_candidate_revision(args.storage_root, revision)
+    result["selected_case_ids"] = [
+        article["case_id"] for article in revision["articles"]
+    ]
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -68,8 +198,16 @@ def main(argv: list[str] | None = None) -> int:
             finalized_at_utc=args.finalized_at_utc,
             case_ids=args.case_ids,
         )
-    else:
+    elif args.command == "verify":
         result = verify_journal_edition(args.edition_directory)
+    elif args.command == "candidate-create":
+        result = _create_candidate(args)
+    elif args.command == "candidate-inspect":
+        result = _inspect_candidate(args)
+    elif args.command == "candidate-list":
+        result = _list_candidate(args)
+    else:
+        result = _revise_candidate(args)
 
     json.dump(
         result,
