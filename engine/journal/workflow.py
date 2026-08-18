@@ -13,6 +13,10 @@ import tempfile
 from typing import Any
 
 from .assembly import assemble_journal, validate_assembly
+from .candidate_store import (
+    JournalCandidateStoreError,
+    load_candidate_finalization,
+)
 from .discovery import discover_articles, select_articles
 from .manifest import (
     canonical_json_bytes,
@@ -264,52 +268,27 @@ def verify_journal_edition(
     return result
 
 
-def build_weekly_journal(
+def _build_manifest_edition(
     *,
     project_root: Path,
-    generated_root: Path,
     output_root: Path,
-    journal_id: str,
-    edition_date: str,
-    title: str,
-    selected_by: str,
-    finalized_at_utc: str,
-    case_ids: Sequence[str],
+    manifest: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Build one journal edition atomically from local certified artifacts."""
+    """Atomically build an edition from one immutable manifest."""
 
-    if not isinstance(journal_id, str) or not JOURNAL_ID_PATTERN.fullmatch(
-        journal_id
-    ):
-        raise JournalWorkflowError(
-            "journal_id must use uppercase letters, digits, dot, "
-            "underscore or hyphen"
-        )
+    validate_finalized_manifest(manifest)
+    journal_id = manifest["journal_id"]
+    if not JOURNAL_ID_PATTERN.fullmatch(journal_id):
+        raise JournalWorkflowError("manifest journal_id is invalid")
 
     project = project_root.expanduser().resolve()
-    generated = generated_root.expanduser().resolve()
     output_parent = output_root.expanduser().resolve()
     output_parent.mkdir(parents=True, exist_ok=True)
-
     target = output_parent / journal_id
-
     if target.exists():
         raise JournalWorkflowError(
             f"journal edition already exists: {journal_id}"
         )
-
-    discovery = discover_articles(generated)
-    selected = select_articles(discovery, case_ids)
-
-    manifest = finalize_manifest(
-        journal_id=journal_id,
-        edition_date=edition_date,
-        title=title,
-        selected_by=selected_by,
-        finalized_at_utc=finalized_at_utc,
-        articles=selected,
-    )
-    validate_finalized_manifest(manifest)
 
     assembly = assemble_journal(
         manifest,
@@ -317,6 +296,9 @@ def build_weekly_journal(
     )
     validate_assembly(assembly)
 
+    selected_case_ids = [
+        article["case_id"] for article in manifest["articles"]
+    ]
     temporary = Path(
         tempfile.mkdtemp(
             prefix=f".{journal_id}.",
@@ -332,7 +314,6 @@ def build_weekly_journal(
 
         _write_json(manifest_path, manifest)
         _write_json(assembly_path, assembly)
-
         render_evidence = render_journal_pdf(
             assembly,
             pdf_path,
@@ -341,18 +322,20 @@ def build_weekly_journal(
         evidence: dict[str, Any] = {
             "schema_version": "1.0",
             "journal_id": journal_id,
-            "edition_date": edition_date,
+            "edition_date": manifest["edition_date"],
             "status": "COMPLETE",
-            "selected_by": selected_by,
-            "finalized_at_utc": finalized_at_utc,
-            "selected_case_ids": list(case_ids),
-            "article_count": len(selected),
+            "selected_by": manifest["selected_by"],
+            "finalized_at_utc": manifest["finalized_at_utc"],
+            "selected_case_ids": selected_case_ids,
+            "article_count": manifest["article_count"],
             "manifest_sha256": manifest["manifest_sha256"],
             "assembly_sha256": assembly["assembly_sha256"],
             "pdf_sha256": render_evidence["pdf_sha256"],
             "pdf_page_count": render_evidence["page_count"],
             "pdf_byte_count": render_evidence["byte_count"],
-            "renderer_version": render_evidence["renderer_version"],
+            "renderer_version": render_evidence[
+                "renderer_version"
+            ],
             "language": "en",
             "tamil_rendered": False,
             "thirukkural_algorithm_usage": "TITLE_ONLY",
@@ -365,16 +348,99 @@ def build_weekly_journal(
                 "evidence": "build-evidence.json",
             },
         }
-        evidence["evidence_sha256"] = compute_evidence_sha256(evidence)
+        evidence["evidence_sha256"] = (
+            compute_evidence_sha256(evidence)
+        )
         validate_build_evidence(evidence)
         _write_json(evidence_path, evidence)
-
         temporary.rename(target)
-
     except Exception:
         shutil.rmtree(temporary, ignore_errors=True)
         raise
 
     result = deepcopy(evidence)
     result["output_directory"] = target.as_posix()
+    return result
+
+
+def build_weekly_journal(
+    *,
+    project_root: Path,
+    generated_root: Path,
+    output_root: Path,
+    journal_id: str,
+    edition_date: str,
+    title: str,
+    selected_by: str,
+    finalized_at_utc: str,
+    case_ids: Sequence[str],
+) -> dict[str, Any]:
+    """Build one legacy edition from an explicit local selection."""
+
+    if (
+        not isinstance(journal_id, str)
+        or not JOURNAL_ID_PATTERN.fullmatch(journal_id)
+    ):
+        raise JournalWorkflowError(
+            "journal_id must use uppercase letters, digits, dot, "
+            "underscore or hyphen"
+        )
+
+    generated = generated_root.expanduser().resolve()
+    discovery = discover_articles(generated)
+    selected = select_articles(discovery, case_ids)
+    manifest = finalize_manifest(
+        journal_id=journal_id,
+        edition_date=edition_date,
+        title=title,
+        selected_by=selected_by,
+        finalized_at_utc=finalized_at_utc,
+        articles=selected,
+    )
+
+    return _build_manifest_edition(
+        project_root=project_root,
+        output_root=output_root,
+        manifest=manifest,
+    )
+
+
+def build_finalized_candidate_journal(
+    *,
+    project_root: Path,
+    candidate_storage_root: Path,
+    output_root: Path,
+    candidate_id: str,
+) -> dict[str, Any]:
+    """Build directly from a candidate's immutable finalized manifest."""
+
+    try:
+        manifest = load_candidate_finalization(
+            candidate_storage_root,
+            candidate_id,
+        )
+    except JournalCandidateStoreError as exc:
+        raise JournalWorkflowError(
+            f"cannot load finalized candidate: {exc}"
+        ) from exc
+
+    lineage = manifest.get("candidate_lineage")
+    if (
+        not isinstance(lineage, Mapping)
+        or lineage.get("candidate_id") != candidate_id
+    ):
+        raise JournalWorkflowError(
+            "finalized candidate manifest lineage is invalid"
+        )
+
+    result = _build_manifest_edition(
+        project_root=project_root,
+        output_root=output_root,
+        manifest=manifest,
+    )
+    result["candidate_id"] = lineage["candidate_id"]
+    result["candidate_revision_number"] = lineage[
+        "revision_number"
+    ]
+    result["candidate_sha256"] = lineage["candidate_sha256"]
     return result
