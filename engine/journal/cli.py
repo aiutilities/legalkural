@@ -8,6 +8,12 @@ from pathlib import Path
 import sys
 from typing import Any
 
+from .archive_store import (
+    inspect_archive_entry,
+    list_archived_editions,
+    register_verified_edition,
+    verify_archived_edition,
+)
 from .candidate import (
     create_candidate_revision,
     revise_candidate,
@@ -118,6 +124,45 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
     )
 
+    archive_register = commands.add_parser("archive-register")
+    archive_register.add_argument(
+        "--archive-root",
+        type=Path,
+        required=True,
+    )
+    archive_register.add_argument(
+        "--edition-directory",
+        type=Path,
+        required=True,
+    )
+    archive_register.add_argument(
+        "--archived-at-utc",
+        required=True,
+    )
+
+    archive_list = commands.add_parser("archive-list")
+    archive_list.add_argument(
+        "--archive-root",
+        type=Path,
+        required=True,
+    )
+
+    archive_inspect = commands.add_parser("archive-inspect")
+    archive_inspect.add_argument(
+        "--archive-root",
+        type=Path,
+        required=True,
+    )
+    archive_inspect.add_argument("--journal-id", required=True)
+
+    archive_verify = commands.add_parser("archive-verify")
+    archive_verify.add_argument(
+        "--archive-root",
+        type=Path,
+        required=True,
+    )
+    archive_verify.add_argument("--journal-id", required=True)
+
     return parser
 
 
@@ -207,6 +252,40 @@ def _finalize_candidate_command(
     )
 
 
+def _register_archive_command(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return register_verified_edition(
+        archive_root=args.archive_root,
+        edition_directory=args.edition_directory,
+        archived_at_utc=args.archived_at_utc,
+    )
+
+
+def _list_archive_command(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return list_archived_editions(args.archive_root)
+
+
+def _inspect_archive_command(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return inspect_archive_entry(
+        args.archive_root,
+        args.journal_id,
+    )
+
+
+def _verify_archive_command(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return verify_archived_edition(
+        args.archive_root,
+        args.journal_id,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
@@ -234,8 +313,16 @@ def main(argv: list[str] | None = None) -> int:
         result = _list_candidate(args)
     elif args.command == "candidate-revise":
         result = _revise_candidate(args)
-    else:
+    elif args.command == "candidate-finalize":
         result = _finalize_candidate_command(args)
+    elif args.command == "archive-register":
+        result = _register_archive_command(args)
+    elif args.command == "archive-list":
+        result = _list_archive_command(args)
+    elif args.command == "archive-inspect":
+        result = _inspect_archive_command(args)
+    else:
+        result = _verify_archive_command(args)
 
     json.dump(
         result,
