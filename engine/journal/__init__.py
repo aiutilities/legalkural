@@ -43,3 +43,15 @@ __all__ += [
     "compute_assembly_sha256",
     "validate_assembly",
 ]
+
+from .renderer import (
+    JournalRenderError,
+    extract_english_article_blocks,
+    render_journal_pdf,
+)
+
+__all__ += [
+    "JournalRenderError",
+    "extract_english_article_blocks",
+    "render_journal_pdf",
+]
