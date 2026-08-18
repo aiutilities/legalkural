@@ -9,6 +9,15 @@ Powered by:
 - AIDPL
 - LearningOS
 
+Current Sprint:
+
+Sprint 57 — Journal Editorial Operations and Archive
+
+Objective:
+
+Complete the governed candidate-edition lifecycle and durable offline
+journal archive while preserving the certified Sprint 56 foundation.
+
 Latest Certified Sprint:
 
 Sprint 56 — Weekly Journal Generation Foundation
