@@ -55,3 +55,17 @@ __all__ += [
     "extract_english_article_blocks",
     "render_journal_pdf",
 ]
+
+from .workflow import (
+    JournalWorkflowError,
+    build_weekly_journal,
+    compute_evidence_sha256,
+    validate_build_evidence,
+)
+
+__all__ += [
+    "JournalWorkflowError",
+    "build_weekly_journal",
+    "compute_evidence_sha256",
+    "validate_build_evidence",
+]
