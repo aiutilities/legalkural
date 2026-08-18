@@ -29,3 +29,17 @@ __all__ += [
     "inspect_case",
     "select_articles",
 ]
+
+from .assembly import (
+    JournalAssemblyError,
+    assemble_journal,
+    compute_assembly_sha256,
+    validate_assembly,
+)
+
+__all__ += [
+    "JournalAssemblyError",
+    "assemble_journal",
+    "compute_assembly_sha256",
+    "validate_assembly",
+]
