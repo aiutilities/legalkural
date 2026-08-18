@@ -15,3 +15,17 @@ __all__ = [
     "finalize_manifest",
     "validate_finalized_manifest",
 ]
+
+from .discovery import (
+    JournalDiscoveryError,
+    discover_articles,
+    inspect_case,
+    select_articles,
+)
+
+__all__ += [
+    "JournalDiscoveryError",
+    "discover_articles",
+    "inspect_case",
+    "select_articles",
+]
