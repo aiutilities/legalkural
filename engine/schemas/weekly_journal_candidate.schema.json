@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LegalKural Weekly Journal Candidate Revision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "revision_number",
+    "previous_revision_sha256",
+    "journal_id",
+    "edition_date",
+    "title",
+    "editor",
+    "created_at_utc",
+    "revised_at_utc",
+    "status",
+    "articles",
+    "candidate_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9._-]+$"
+    },
+    "revision_number": {"type": "integer", "minimum": 1},
+    "previous_revision_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "journal_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9][A-Z0-9._-]+$"
+    },
+    "edition_date": {"type": "string", "format": "date"},
+    "title": {"type": "string", "minLength": 1},
+    "editor": {"type": "string", "minLength": 1},
+    "created_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "revised_at_utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "status": {"const": "CANDIDATE"},
+    "articles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "position",
+          "case_id",
+          "title",
+          "slug",
+          "source_payload",
+          "content_sha256",
+          "publication_evidence",
+          "publication_evidence_sha256",
+          "published_url",
+          "published_at",
+          "author",
+          "categories",
+          "tags"
+        ],
+        "properties": {
+          "position": {"type": "integer", "minimum": 1},
+          "case_id": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "source_payload": {"type": "string", "minLength": 1},
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "publication_evidence": {"type": "string", "minLength": 1},
+          "publication_evidence_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "published_url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "author": {"type": "integer", "minimum": 1},
+          "categories": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "integer", "minimum": 1}
+          },
+          "tags": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "candidate_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
