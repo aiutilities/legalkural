@@ -83,6 +83,55 @@ def _sha256(value: Any, field: str) -> str:
     return text
 
 
+def _positive_integer(value: Any, field: str) -> int:
+    if (
+        not isinstance(value, int)
+        or isinstance(value, bool)
+        or value <= 0
+    ):
+        raise JournalManifestError(f"{field} must be a positive integer")
+    return value
+
+
+def _positive_integer_list(value: Any, field: str) -> list[int]:
+    if (
+        not isinstance(value, list)
+        or not value
+        or any(
+            not isinstance(item, int)
+            or isinstance(item, bool)
+            or item <= 0
+            for item in value
+        )
+        or len(value) != len(set(value))
+    ):
+        raise JournalManifestError(
+            f"{field} must be a non-empty unique positive integer list"
+        )
+    normalized = sorted(value)
+    if value != normalized:
+        raise JournalManifestError(f"{field} must be sorted")
+    return normalized
+
+
+def _https_url(value: Any, field: str) -> str:
+    text = _required_text(value, field)
+    if not text.startswith("https://"):
+        raise JournalManifestError(f"{field} must use HTTPS")
+    return text
+
+
+def _publication_datetime(value: Any, field: str) -> str:
+    text = _required_text(value, field)
+    try:
+        datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise JournalManifestError(
+            f"{field} must use ISO-8601 format"
+        ) from exc
+    return text
+
+
 def _normalize_articles(
     articles: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -108,8 +157,67 @@ def _normalize_articles(
             "article.source_payload",
         )
         content_sha256 = _sha256(
+
             source.get("content_sha256"),
+
             "article.content_sha256",
+
+        )
+
+        publication_evidence = _required_text(
+
+            source.get("publication_evidence"),
+
+            "article.publication_evidence",
+
+        )
+
+        publication_evidence_sha256 = _sha256(
+
+            source.get("publication_evidence_sha256"),
+
+            "article.publication_evidence_sha256",
+
+        )
+
+        published_url = _https_url(
+
+            source.get("published_url"),
+
+            "article.published_url",
+
+        )
+
+        published_at = _publication_datetime(
+
+            source.get("published_at"),
+
+            "article.published_at",
+
+        )
+
+        author = _positive_integer(
+
+            source.get("author"),
+
+            "article.author",
+
+        )
+
+        categories = _positive_integer_list(
+
+            source.get("categories"),
+
+            "article.categories",
+
+        )
+
+        tags = _positive_integer_list(
+
+            source.get("tags"),
+
+            "article.tags",
+
         )
 
         if not SLUG_PATTERN.fullmatch(slug):
@@ -138,6 +246,15 @@ def _normalize_articles(
                 "slug": slug,
                 "source_payload": source_payload,
                 "content_sha256": content_sha256,
+                "publication_evidence": publication_evidence,
+                "publication_evidence_sha256": (
+                    publication_evidence_sha256
+                ),
+                "published_url": published_url,
+                "published_at": published_at,
+                "author": author,
+                "categories": categories,
+                "tags": tags,
             }
         )
 
@@ -161,16 +278,26 @@ def finalize_manifest(
     normalized_selector = _required_text(selected_by, "selected_by")
     normalized_time = _utc_datetime(finalized_at_utc, "finalized_at_utc")
 
+    normalized_articles = _normalize_articles(articles)
+    publication_dates = [
+        article["published_at"][:10]
+        for article in normalized_articles
+    ]
     manifest: dict[str, Any] = {
         "schema_version": "1.0",
         "journal_id": normalized_id,
         "edition_date": normalized_date,
+        "covered_date_range": {
+            "start": min(publication_dates),
+            "end": max(publication_dates),
+        },
         "title": normalized_title,
         "language": "en",
         "selection_status": "FINALIZED",
         "selected_by": normalized_selector,
         "finalized_at_utc": normalized_time,
-        "articles": _normalize_articles(articles),
+        "article_count": len(normalized_articles),
+        "articles": normalized_articles,
     }
     manifest["manifest_sha256"] = compute_manifest_sha256(manifest)
 
@@ -213,6 +340,22 @@ def validate_finalized_manifest(
             "articles must use normalized contiguous positions"
         )
 
+    if manifest.get("article_count") != len(normalized_articles):
+        raise JournalManifestError(
+            "article_count does not match manifest articles"
+        )
+    publication_dates = [
+        article["published_at"][:10]
+        for article in normalized_articles
+    ]
+    expected_range = {
+        "start": min(publication_dates),
+        "end": max(publication_dates),
+    }
+    if manifest.get("covered_date_range") != expected_range:
+        raise JournalManifestError(
+            "covered_date_range does not match publication dates"
+        )
     supplied_digest = _sha256(
         manifest.get("manifest_sha256"),
         "manifest_sha256",

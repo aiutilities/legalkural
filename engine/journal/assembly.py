@@ -125,6 +125,17 @@ def assemble_journal(
                 "content_html": content,
                 "content_sha256": content_hash,
                 "source_payload": selected["source_payload"],
+                "publication_evidence": selected[
+                    "publication_evidence"
+                ],
+                "publication_evidence_sha256": selected[
+                    "publication_evidence_sha256"
+                ],
+                "published_url": selected["published_url"],
+                "published_at": selected["published_at"],
+                "author": selected["author"],
+                "categories": list(selected["categories"]),
+                "tags": list(selected["tags"]),
             }
         )
 
@@ -132,7 +143,11 @@ def assemble_journal(
         "schema_version": "1.0",
         "journal_id": manifest["journal_id"],
         "edition_date": manifest["edition_date"],
+        "covered_date_range": deepcopy(
+            manifest["covered_date_range"]
+        ),
         "title": manifest["title"],
+        "article_count": manifest["article_count"],
         "language": "en",
         "manifest_sha256": manifest["manifest_sha256"],
         "rendering_policy": {
@@ -190,6 +205,22 @@ def validate_assembly(assembly: Mapping[str, Any]) -> None:
             "assembly article positions are not contiguous"
         )
 
+    if assembly.get("article_count") != len(articles):
+        raise JournalAssemblyError(
+            "assembly article_count does not match articles"
+        )
+    publication_dates = [
+        article.get("published_at", "")[:10]
+        for article in articles
+    ]
+    expected_range = {
+        "start": min(publication_dates),
+        "end": max(publication_dates),
+    }
+    if assembly.get("covered_date_range") != expected_range:
+        raise JournalAssemblyError(
+            "assembly covered_date_range is invalid"
+        )
     supplied_hash = assembly.get("assembly_sha256")
     if not isinstance(supplied_hash, str):
         raise JournalAssemblyError("assembly_sha256 is missing")

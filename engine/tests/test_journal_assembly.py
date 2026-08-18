@@ -17,6 +17,20 @@ from journal.manifest import finalize_manifest
 CONTENT = "<h2>Case Snapshot</h2><p>Certified English article.</p>"
 
 
+PUBLICATION_METADATA = {
+    "publication_evidence": (
+        "generated/LK-0001/output/11-publication/"
+        "wordpress-publication-evidence.json"
+    ),
+    "publication_evidence_sha256": "c" * 64,
+    "published_url": "https://example.test/article/",
+    "published_at": "2026-08-17T14:51:33",
+    "author": 101,
+    "categories": [201],
+    "tags": [301, 302, 303],
+}
+
+
 def write_payload(root: Path, content: str = CONTENT) -> str:
     path = (
         root
@@ -55,6 +69,7 @@ def build_manifest(root: Path, content: str = CONTENT):
         finalized_at_utc="2026-08-18T03:45:00Z",
         articles=[
             {
+                **PUBLICATION_METADATA,
                 "case_id": "LK-0001",
                 "title": "End-Use Over Label: Hostels Are Homes",
                 "slug": "end-use-over-label-hostels-are-homes",
@@ -132,6 +147,7 @@ def test_source_path_escape_is_rejected(tmp_path):
         finalized_at_utc="2026-08-18T03:45:00Z",
         articles=[
             {
+                **PUBLICATION_METADATA,
                 "case_id": "LK-0001",
                 "title": "End-Use Over Label: Hostels Are Homes",
                 "slug": "end-use-over-label-hostels-are-homes",
@@ -161,3 +177,19 @@ def test_tampered_assembly_is_rejected(tmp_path):
         match="assembly_sha256 does not match",
     ):
         validate_assembly(tampered)
+
+
+def test_assembly_preserves_manifest_publication_lineage(tmp_path):
+    manifest = build_manifest(tmp_path)
+    assembly = assemble_journal(manifest, project_root=tmp_path)
+    article = assembly["articles"][0]
+
+    assert assembly["article_count"] == 1
+    assert assembly["covered_date_range"] == {
+        "start": "2026-08-17",
+        "end": "2026-08-17",
+    }
+    assert article["author"] == 101
+    assert article["categories"] == [201]
+    assert article["tags"] == [301, 302, 303]
+    assert article["published_url"].startswith("https://")

@@ -15,6 +15,20 @@ from journal.renderer import (
 )
 
 
+PUBLICATION_METADATA = {
+    "publication_evidence": (
+        "generated/LK-0001/output/11-publication/"
+        "wordpress-publication-evidence.json"
+    ),
+    "publication_evidence_sha256": "c" * 64,
+    "published_url": "https://example.test/article/",
+    "published_at": "2026-08-17T14:51:33",
+    "author": 101,
+    "categories": [201],
+    "tags": [301, 302, 303],
+}
+
+
 HTML = """
 <p><strong>Name may call it trade; need makes it home.</strong></p>
 <p>வியாபாரம் பெயர் பொருளன்று; பயன்தான் பொருள்.</p>
@@ -56,6 +70,7 @@ def assembly_fixture(root: Path):
         finalized_at_utc="2026-08-18T04:00:00Z",
         articles=[
             {
+                **PUBLICATION_METADATA,
                 "case_id": "LK-0001",
                 "title": "End-Use Over Label: Hostels Are Homes",
                 "slug": "end-use-over-label-hostels-are-homes",
@@ -149,6 +164,7 @@ def test_long_legal_sentence_remains_inside_print_boundary(tmp_path):
         finalized_at_utc="2026-08-18T04:15:00Z",
         articles=[
             {
+                **PUBLICATION_METADATA,
                 "case_id": "LK-LONG",
                 "title": "Natural Justice Before Reclassification",
                 "slug": "natural-justice-before-reclassification",

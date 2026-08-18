@@ -20,6 +20,16 @@ ARTICLE = {
         "wordpress-final-draft-payload.json"
     ),
     "content_sha256": "a" * 64,
+    "publication_evidence": (
+        "generated/LK-OPENAI-PILOT-0001/"
+        "wordpress-publication-evidence.json"
+    ),
+    "publication_evidence_sha256": "c" * 64,
+    "published_url": "https://example.test/hostels-are-homes/",
+    "published_at": "2026-08-17T14:51:33",
+    "author": 101,
+    "categories": [201],
+    "tags": [301, 302, 303],
 }
 
 
@@ -165,3 +175,56 @@ def test_finalized_manifest_matches_json_schema():
         schema=schema,
         format_checker=FormatChecker(),
     )
+
+
+def test_manifest_preserves_publication_lineage():
+    manifest = build_manifest()
+    article = manifest["articles"][0]
+
+    assert manifest["article_count"] == 1
+    assert manifest["covered_date_range"] == {
+        "start": "2026-08-17",
+        "end": "2026-08-17",
+    }
+    assert article["author"] == 101
+    assert article["categories"] == [201]
+    assert article["tags"] == [301, 302, 303]
+    assert article["published_url"].startswith("https://")
+    assert article["publication_evidence_sha256"] == "c" * 64
+
+
+def test_manifest_covered_range_uses_publication_dates():
+    second_article = {
+        **ARTICLE,
+        "case_id": "LK-SYNTHETIC-0002",
+        "slug": "synthetic-second",
+        "content_sha256": "b" * 64,
+        "publication_evidence_sha256": "d" * 64,
+        "published_at": "2026-08-15T09:00:00",
+    }
+    manifest = finalize_manifest(
+        journal_id="LK-JOURNAL-2026-W34",
+        edition_date="2026-08-23",
+        title="LegalKural Weekly Journal",
+        selected_by="Founder",
+        finalized_at_utc="2026-08-17T15:30:00Z",
+        articles=[ARTICLE, second_article],
+    )
+
+    assert manifest["article_count"] == 2
+    assert manifest["covered_date_range"] == {
+        "start": "2026-08-15",
+        "end": "2026-08-17",
+    }
+
+
+def test_invalid_covered_date_range_is_rejected():
+    manifest = build_manifest()
+    manifest["covered_date_range"]["start"] = "2026-08-01"
+    manifest["manifest_sha256"] = compute_manifest_sha256(manifest)
+
+    with pytest.raises(
+        JournalManifestError,
+        match="covered_date_range",
+    ):
+        validate_finalized_manifest(manifest)

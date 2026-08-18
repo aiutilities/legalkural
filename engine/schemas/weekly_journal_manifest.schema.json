@@ -13,7 +13,9 @@
     "selected_by",
     "finalized_at_utc",
     "articles",
-    "manifest_sha256"
+    "manifest_sha256",
+    "covered_date_range",
+    "article_count"
   ],
   "properties": {
     "schema_version": {
@@ -58,7 +60,14 @@
           "title",
           "slug",
           "source_payload",
-          "content_sha256"
+          "content_sha256",
+          "publication_evidence",
+          "publication_evidence_sha256",
+          "published_url",
+          "published_at",
+          "author",
+          "categories",
+          "tags"
         ],
         "properties": {
           "position": {
@@ -84,6 +93,45 @@
           "content_sha256": {
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
+          },
+          "publication_evidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "publication_evidence_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "published_url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "author": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "categories": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "tags": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         }
       }
@@ -91,6 +139,28 @@
     "manifest_sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "covered_date_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date"
+        },
+        "end": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "article_count": {
+      "type": "integer",
+      "minimum": 1
     }
   }
 }
