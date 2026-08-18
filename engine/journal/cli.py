@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 from .discovery import discover_articles
-from .workflow import build_weekly_journal
+from .workflow import build_weekly_journal, verify_journal_edition
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,6 +42,12 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
     )
 
+    verify = commands.add_parser("verify")
+    verify.add_argument(
+        "--edition-directory",
+        type=Path,
+        required=True,
+    )
     return parser
 
 
@@ -50,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "discover":
         result = discover_articles(args.generated_root)
-    else:
+    elif args.command == "build":
         result = build_weekly_journal(
             project_root=args.project_root,
             generated_root=args.generated_root,
@@ -62,6 +68,8 @@ def main(argv: list[str] | None = None) -> int:
             finalized_at_utc=args.finalized_at_utc,
             case_ids=args.case_ids,
         )
+    else:
+        result = verify_journal_edition(args.edition_directory)
 
     json.dump(
         result,
