@@ -2,7 +2,7 @@
 
 ## Status
 
-`APPROVED — ACTIVE`
+`CLOSED — CERTIFIED — FOUNDER APPROVED`
 
 ## Founder Approval
 
@@ -295,3 +295,27 @@ Website and journal visual dressing remain reserved for the final
 website-dressing sprint.
 
 Sprint 57 must not pull that work forward.
+
+## Founder Closeout Approval
+
+The Founder explicitly approved Sprint 57 closeout on 2026-08-18.
+
+Certified result:
+
+`CLOSED — CERTIFIED — FOUNDER APPROVED`
+
+Final functional regression:
+
+`446 passed`
+
+The certified real-pilot integration recorded zero provider requests,
+zero WordPress requests, no Tamil rendering and title-only use of the
+Thirukkural-inspired algorithm.
+
+Certification and operator handover:
+
+- `AIDPL/certifications/SPRINT_57_JOURNAL_EDITORIAL_OPERATIONS_AND_ARCHIVE_CERTIFICATION.md`
+- `AIDPL/handovers/SPRINT_57_JOURNAL_EDITORIAL_OPERATIONS_OPERATOR_HANDOVER.md`
+
+Website and journal visual dressing remain deferred to the final
+website-dressing sprint.

@@ -9,28 +9,33 @@ Powered by:
 - AIDPL
 - LearningOS
 
-Current Sprint:
+Current Programme Checkpoint:
 
 Sprint 57 — Journal Editorial Operations and Archive
-
-Objective:
-
-Complete the governed candidate-edition lifecycle and durable offline
-journal archive while preserving the certified Sprint 56 foundation.
-
-Latest Certified Sprint:
-
-Sprint 56 — Weekly Journal Generation Foundation
 
 Status:
 
 Closed — Certified — Founder Approved
 
+Latest Certified Sprint:
+
+Sprint 57 — Journal Editorial Operations and Archive
+
 Certified Result:
 
-Offline-first, deterministic, editor-selected weekly journal generation
-from certified LegalKural articles, with immutable publication lineage,
-print-ready PDF output and offline edition verification.
+Governed offline candidate-edition lifecycle with append-only revisions,
+deliberate finalization, immutable candidate-to-manifest lineage,
+deterministic journal generation, offline verification and a durable,
+atomic verified-edition archive.
+
+Certification:
+
+- 446 tests passed.
+- Certified-pilot read-only integration verified.
+- Provider requests: 0.
+- WordPress requests: 0.
+- Tamil rendering: disabled.
+- Thirukkural-inspired algorithm: title-only.
 
 Deferred:
 
