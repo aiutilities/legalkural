@@ -18,6 +18,7 @@ from .candidate_store import (
     store_candidate_revision,
 )
 from .discovery import discover_articles, select_articles
+from .finalization import finalize_candidate
 from .workflow import build_weekly_journal, verify_journal_edition
 
 
@@ -104,6 +105,19 @@ def build_parser() -> argparse.ArgumentParser:
     candidate_revise.add_argument("--revised-at-utc", required=True)
     _add_case_ids(candidate_revise)
 
+    candidate_finalize = commands.add_parser("candidate-finalize")
+    _add_candidate_location(candidate_finalize)
+    candidate_finalize.add_argument(
+        "--generated-root",
+        type=Path,
+        default=Path("generated"),
+    )
+    candidate_finalize.add_argument("--selected-by", required=True)
+    candidate_finalize.add_argument(
+        "--finalized-at-utc",
+        required=True,
+    )
+
     return parser
 
 
@@ -181,6 +195,18 @@ def _revise_candidate(args: argparse.Namespace) -> dict[str, Any]:
     return result
 
 
+def _finalize_candidate_command(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return finalize_candidate(
+        storage_root=args.storage_root,
+        generated_root=args.generated_root,
+        candidate_id=args.candidate_id,
+        selected_by=args.selected_by,
+        finalized_at_utc=args.finalized_at_utc,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
@@ -206,8 +232,10 @@ def main(argv: list[str] | None = None) -> int:
         result = _inspect_candidate(args)
     elif args.command == "candidate-list":
         result = _list_candidate(args)
-    else:
+    elif args.command == "candidate-revise":
         result = _revise_candidate(args)
+    else:
+        result = _finalize_candidate_command(args)
 
     json.dump(
         result,
