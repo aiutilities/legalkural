@@ -25,7 +25,11 @@ from .candidate_store import (
 )
 from .discovery import discover_articles, select_articles
 from .finalization import finalize_candidate
-from .workflow import build_weekly_journal, verify_journal_edition
+from .workflow import (
+    build_finalized_candidate_journal,
+    build_weekly_journal,
+    verify_journal_edition,
+)
 
 
 def _add_case_ids(parser: argparse.ArgumentParser) -> None:
@@ -123,6 +127,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--finalized-at-utc",
         required=True,
     )
+
+    candidate_build = commands.add_parser("candidate-build")
+    candidate_build.add_argument(
+        "--project-root",
+        type=Path,
+        default=Path("."),
+    )
+    candidate_build.add_argument(
+        "--storage-root",
+        type=Path,
+        required=True,
+    )
+    candidate_build.add_argument(
+        "--output-root",
+        type=Path,
+        required=True,
+    )
+    candidate_build.add_argument("--candidate-id", required=True)
 
     archive_register = commands.add_parser("archive-register")
     archive_register.add_argument(
@@ -252,6 +274,15 @@ def _finalize_candidate_command(
     )
 
 
+def _build_candidate_command(args: argparse.Namespace) -> dict:
+    return build_finalized_candidate_journal(
+        project_root=args.project_root,
+        candidate_storage_root=args.storage_root,
+        output_root=args.output_root,
+        candidate_id=args.candidate_id,
+    )
+
+
 def _register_archive_command(
     args: argparse.Namespace,
 ) -> dict[str, Any]:
@@ -315,6 +346,8 @@ def main(argv: list[str] | None = None) -> int:
         result = _revise_candidate(args)
     elif args.command == "candidate-finalize":
         result = _finalize_candidate_command(args)
+    elif args.command == "candidate-build":
+        result = _build_candidate_command(args)
     elif args.command == "archive-register":
         result = _register_archive_command(args)
     elif args.command == "archive-list":
