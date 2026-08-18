@@ -23,7 +23,8 @@
     "provider_requests",
     "wordpress_requests",
     "files",
-    "evidence_sha256"
+    "evidence_sha256",
+    "renderer_version"
   ],
   "properties": {
     "schema_version": {
@@ -124,6 +125,9 @@
     "evidence_sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "renderer_version": {
+      "const": "1.0.0"
     }
   }
 }

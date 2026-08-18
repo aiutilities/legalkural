@@ -53,6 +53,7 @@ EVIDENCE_KEYS = {
     "pdf_sha256",
     "pdf_page_count",
     "pdf_byte_count",
+    "renderer_version",
     "language",
     "tamil_rendered",
     "thirukkural_algorithm_usage",
@@ -128,6 +129,10 @@ def validate_build_evidence(evidence: Mapping[str, Any]) -> None:
         value = evidence.get(field)
         if not isinstance(value, int) or isinstance(value, bool) or value < 1:
             raise JournalWorkflowError(f"{field} must be a positive integer")
+    if evidence.get("renderer_version") != "1.0.0":
+        raise JournalWorkflowError(
+            "unsupported journal renderer_version"
+        )
     if evidence.get("language") != "en":
         raise JournalWorkflowError("journal language must be en")
     if evidence.get("tamil_rendered") is not False:
@@ -347,6 +352,7 @@ def build_weekly_journal(
             "pdf_sha256": render_evidence["pdf_sha256"],
             "pdf_page_count": render_evidence["page_count"],
             "pdf_byte_count": render_evidence["byte_count"],
+            "renderer_version": render_evidence["renderer_version"],
             "language": "en",
             "tamil_rendered": False,
             "thirukkural_algorithm_usage": "TITLE_ONLY",

@@ -10,6 +10,7 @@ from journal.assembly import (
 )
 from journal.manifest import finalize_manifest
 from journal.renderer import (
+    RENDERER_VERSION,
     extract_english_article_blocks,
     render_journal_pdf,
 )
@@ -260,3 +261,12 @@ def test_all_visible_pdf_text_uses_embedded_fonts(tmp_path):
         page.extract_text(visitor_text=inspect_text)
 
     assert unembedded_visible_fragments == []
+
+
+def test_renderer_version_is_stable_and_recorded(tmp_path):
+    assembly = assembly_fixture(tmp_path)
+    output = tmp_path / "versioned.pdf"
+    report = render_journal_pdf(assembly, output)
+
+    assert RENDERER_VERSION == "1.0.0"
+    assert report["renderer_version"] == RENDERER_VERSION

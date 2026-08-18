@@ -20,6 +20,7 @@ from reportlab.pdfgen.canvas import Canvas
 from .assembly import validate_assembly
 
 
+RENDERER_VERSION = "1.0.0"
 TAMIL_PATTERN = re.compile(r"[\u0B80-\u0BFF]")
 BLOCK_TAGS = {"p", "li", "h1", "h2", "h3", "h4", "h5", "h6"}
 
@@ -357,6 +358,7 @@ def render_journal_pdf(
         "journal_id": assembly["journal_id"],
         "assembly_sha256": assembly["assembly_sha256"],
         "output_path": output.as_posix(),
+        "renderer_version": RENDERER_VERSION,
         "pdf_sha256": digest,
         "page_count": len(reader.pages),
         "byte_count": output.stat().st_size,

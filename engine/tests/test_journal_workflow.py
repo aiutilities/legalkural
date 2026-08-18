@@ -240,6 +240,7 @@ def test_build_evidence_schema_matches_runtime_contract():
         "pdf_sha256",
         "pdf_page_count",
         "pdf_byte_count",
+        "renderer_version",
         "language",
         "tamil_rendered",
         "thirukkural_algorithm_usage",
@@ -256,3 +257,15 @@ def test_build_evidence_schema_matches_runtime_contract():
     )
     assert schema["properties"]["provider_requests"]["const"] == 0
     assert schema["properties"]["wordpress_requests"]["const"] == 0
+
+
+def test_build_evidence_records_renderer_version(tmp_path):
+    create_eligible_case(tmp_path, "LK-0001", "first")
+    result = build(tmp_path)
+    output = Path(result["output_directory"])
+    evidence = json.loads(
+        (output / "build-evidence.json").read_text(encoding="utf-8")
+    )
+
+    assert evidence["renderer_version"] == "1.0.0"
+    assert verify_journal_edition(output)["renderer_version"] == "1.0.0"
