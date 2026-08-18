@@ -15,3 +15,15 @@ __all__ = [
     "load_production_workspace",
     "validate_production_workspace",
 ]
+
+from .integrity import (
+    ProductionIntegrityError,
+    audit_production_estate,
+    validate_production_integrity_report,
+)
+
+__all__ += [
+    "ProductionIntegrityError",
+    "audit_production_estate",
+    "validate_production_integrity_report",
+]

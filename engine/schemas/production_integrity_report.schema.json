@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LegalKural Production Integrity Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "workspace_id", "workspace_root", "status", "counts", "findings", "provider_requests", "wordpress_requests", "tamil_rendered", "thirukkural_algorithm_usage"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "workspace_id": {"type": "string"},
+    "workspace_root": {"type": "string"},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidates", "candidate_revisions", "finalized_candidates", "archived_editions", "verified_archived_editions", "findings"],
+      "properties": {
+        "candidates": {"type": "integer", "minimum": 0},
+        "candidate_revisions": {"type": "integer", "minimum": 0},
+        "finalized_candidates": {"type": "integer", "minimum": 0},
+        "archived_editions": {"type": "integer", "minimum": 0},
+        "verified_archived_editions": {"type": "integer", "minimum": 0},
+        "findings": {"type": "integer", "minimum": 0}
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "scope", "message"],
+        "properties": {
+          "code": {"type": "string"},
+          "severity": {"const": "ERROR"},
+          "scope": {"type": "string"},
+          "message": {"type": "string"}
+        }
+      }
+    },
+    "provider_requests": {"const": 0},
+    "wordpress_requests": {"const": 0},
+    "tamil_rendered": {"const": false},
+    "thirukkural_algorithm_usage": {"const": "TITLE_ONLY"}
+  }
+}
