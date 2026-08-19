@@ -63,7 +63,7 @@
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
     },
-    "renderer_version": {"const": "1.0.0"},
+    "renderer_version": {"enum": ["1.0.0", "2.0.0"]},
     "verification_status": {"const": "VERIFIED"},
     "archived_at_utc": {
       "type": "string",

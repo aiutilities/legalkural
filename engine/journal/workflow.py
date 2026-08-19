@@ -133,7 +133,7 @@ def validate_build_evidence(evidence: Mapping[str, Any]) -> None:
         value = evidence.get(field)
         if not isinstance(value, int) or isinstance(value, bool) or value < 1:
             raise JournalWorkflowError(f"{field} must be a positive integer")
-    if evidence.get("renderer_version") != "1.0.0":
+    if evidence.get("renderer_version") not in {"1.0.0", "2.0.0"}:
         raise JournalWorkflowError(
             "unsupported journal renderer_version"
         )

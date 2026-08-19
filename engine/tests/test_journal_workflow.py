@@ -267,5 +267,5 @@ def test_build_evidence_records_renderer_version(tmp_path):
         (output / "build-evidence.json").read_text(encoding="utf-8")
     )
 
-    assert evidence["renderer_version"] == "1.0.0"
-    assert verify_journal_edition(output)["renderer_version"] == "1.0.0"
+    assert evidence["renderer_version"] == "2.0.0"
+    assert verify_journal_edition(output)["renderer_version"] == "2.0.0"

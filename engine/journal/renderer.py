@@ -11,6 +11,7 @@ from typing import Any
 
 from pypdf import PdfReader
 import reportlab
+from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import stringWidth
@@ -20,7 +21,7 @@ from reportlab.pdfgen.canvas import Canvas
 from .assembly import validate_assembly
 
 
-RENDERER_VERSION = "1.0.0"
+RENDERER_VERSION = "2.0.0"
 TAMIL_PATTERN = re.compile(r"[\u0B80-\u0BFF]")
 BLOCK_TAGS = {"p", "li", "h1", "h2", "h3", "h4", "h5", "h6"}
 
@@ -45,6 +46,16 @@ class JournalRenderError(ValueError):
 FONT_REGULAR = "LegalKuralSans"
 FONT_BOLD = "LegalKuralSans-Bold"
 FONT_ITALIC = "LegalKuralSans-Italic"
+
+BRAND_NAVY = HexColor("#0B1F3A")
+BRAND_NAVY_SECONDARY = HexColor("#183B5B")
+BRAND_TEAL = HexColor("#087E8B")
+BRAND_TEAL_DARK = HexColor("#066872")
+BRAND_SLATE = HexColor("#17212B")
+BRAND_SLATE_SECONDARY = HexColor("#52606D")
+BRAND_MIST = HexColor("#F5F9FB")
+BRAND_WHITE = HexColor("#FFFFFF")
+BRAND_TAGLINE = "The court records events. We reveal their meaning."
 
 
 def _register_embedded_fonts() -> None:
@@ -234,11 +245,17 @@ def render_journal_pdf(
     page_number = 0
 
     def footer() -> None:
-        canvas.setFont(FONT_REGULAR, 8)
-        canvas.drawCentredString(
-            width / 2,
-            24,
-            f"LegalKural | Page {page_number}",
+        canvas.setStrokeColor(BRAND_TEAL)
+        canvas.setLineWidth(0.7)
+        canvas.line(left, 36, width - right, 36)
+        canvas.setFillColor(BRAND_SLATE_SECONDARY)
+        canvas.setFont(FONT_REGULAR, 7.5)
+        canvas.drawString(left, 22, "LegalKural")
+        canvas.drawCentredString(width / 2, 22, f"Page {page_number}")
+        canvas.drawRightString(
+            width - right,
+            22,
+            _latin_text(assembly["journal_id"]),
         )
 
     def new_page() -> float:
@@ -255,34 +272,81 @@ def render_journal_pdf(
         return y
 
     y = new_page()
-    canvas.setFont(FONT_BOLD, 25)
+
+    canvas.setFillColor(BRAND_NAVY)
+    canvas.rect(0, height - 190, width, 190, stroke=0, fill=1)
+    canvas.setFillColor(BRAND_WHITE)
+    canvas.setFont(FONT_BOLD, 24)
+    canvas.drawString(left, height - 70, "Legal")
+    legal_width = stringWidth("Legal", FONT_BOLD, 24)
+    canvas.setFillColor(BRAND_TEAL)
+    canvas.drawString(left + legal_width, height - 70, "Kural")
+    canvas.setFillColor(BRAND_WHITE)
+    canvas.setFont(FONT_REGULAR, 10)
+    canvas.drawString(left, height - 94, BRAND_TAGLINE)
+    canvas.setStrokeColor(BRAND_TEAL)
+    canvas.setLineWidth(3)
+    canvas.line(left, height - 118, width - right, height - 118)
+
+    y = height - 230
+    canvas.setFillColor(BRAND_NAVY)
+    canvas.setFont(FONT_BOLD, 24)
     for line in _wrapped_lines(
         _latin_text(assembly["title"]),
         font_name=FONT_BOLD,
-        font_size=25,
+        font_size=24,
         width=usable_width,
     ):
         canvas.drawString(left, y, line)
-        y -= 31
-
-    y -= 14
-    canvas.setFont(FONT_REGULAR, 12)
-    canvas.drawString(
-        left,
-        y,
-        f"Edition: {assembly['edition_date']}",
-    )
+        y -= 30
+    y -= 8
+    canvas.setFillColor(BRAND_SLATE_SECONDARY)
+    canvas.setFont(FONT_REGULAR, 10)
+    canvas.drawString(left, y, f"Edition {assembly['edition_date']}")
+    canvas.drawRightString(width - right, y, _latin_text(assembly["journal_id"]))
+    y -= 34
+    canvas.setStrokeColor(BRAND_TEAL)
+    canvas.setLineWidth(1)
+    canvas.line(left, y, width - right, y)
+    y -= 28
+    canvas.setFillColor(BRAND_NAVY)
+    canvas.setFont(FONT_BOLD, 15)
+    canvas.drawString(left, y, "Contents")
     y -= 24
-    canvas.setFont(FONT_ITALIC, 9)
-    canvas.drawString(
-        left,
-        y,
-        "Offline pilot edition - final visual design is deferred.",
-    )
+    for item in assembly["articles"]:
+        y = ensure_space(y, 30)
+        canvas.setFillColor(BRAND_TEAL_DARK)
+        canvas.setFont(FONT_BOLD, 8)
+        canvas.drawString(left, y, f"ARTICLE {item['position']}")
+        canvas.setFillColor(BRAND_SLATE)
+        canvas.setFont(FONT_REGULAR, 9)
+        lines = _wrapped_lines(
+            _latin_text(item["title"]),
+            font_name=FONT_REGULAR,
+            font_size=9,
+            width=usable_width - 72,
+        )
+        title_y = y
+        for line in lines:
+            canvas.drawString(left + 72, title_y, line)
+            title_y -= 12
+        y = min(y - 20, title_y - 5)
 
     for article in assembly["articles"]:
         y = new_page()
-
+        canvas.setFillColor(BRAND_TEAL_DARK)
+        canvas.setFont(FONT_BOLD, 8)
+        canvas.drawString(
+            left,
+            y,
+            f"ARTICLE {article['position']} | {_latin_text(article['case_id'])}",
+        )
+        y -= 18
+        canvas.setStrokeColor(BRAND_TEAL)
+        canvas.setLineWidth(2)
+        canvas.line(left, y, width - right, y)
+        y -= 26
+        canvas.setFillColor(BRAND_NAVY)
         canvas.setFont(FONT_BOLD, 20)
         for line in _wrapped_lines(
             _latin_text(article["title"]),
@@ -304,12 +368,15 @@ def render_journal_pdf(
         for tag, text in blocks:
             if tag in {"h1", "h2"}:
                 font_name, font_size, leading = FONT_BOLD, 16, 21
+                fill_color = BRAND_NAVY
                 before, after = 13, 7
             elif tag in {"h3", "h4", "h5", "h6"}:
                 font_name, font_size, leading = FONT_BOLD, 12, 17
+                fill_color = BRAND_TEAL_DARK
                 before, after = 9, 4
             else:
                 font_name, font_size, leading = FONT_REGULAR, 10, 14
+                fill_color = BRAND_SLATE
                 before, after = 3, 5
                 if tag == "li":
                     text = f"- {text}"
@@ -330,6 +397,7 @@ def render_journal_pdf(
 
                 # ReportLab resets graphics and font state after showPage().
                 # Reassert the embedded font for every rendered line.
+                canvas.setFillColor(fill_color)
                 canvas.setFont(font_name, font_size)
                 canvas.drawString(left, y, line)
                 y -= leading

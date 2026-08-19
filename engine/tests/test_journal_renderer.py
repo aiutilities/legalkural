@@ -268,5 +268,5 @@ def test_renderer_version_is_stable_and_recorded(tmp_path):
     output = tmp_path / "versioned.pdf"
     report = render_journal_pdf(assembly, output)
 
-    assert RENDERER_VERSION == "1.0.0"
+    assert RENDERER_VERSION == "2.0.0"
     assert report["renderer_version"] == RENDERER_VERSION

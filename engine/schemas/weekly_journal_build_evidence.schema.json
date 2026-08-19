@@ -127,7 +127,7 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "renderer_version": {
-      "const": "1.0.0"
+      "enum": ["1.0.0", "2.0.0"]
     }
   }
 }

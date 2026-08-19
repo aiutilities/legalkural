@@ -287,7 +287,7 @@ def validate_archive_entry(entry: Mapping[str, Any]) -> None:
     ):
         _sha256(entry.get(field), field)
 
-    if entry.get("renderer_version") != "1.0.0":
+    if entry.get("renderer_version") not in {"1.0.0", "2.0.0"}:
         raise JournalArchiveError(
             "unsupported renderer_version"
         )
