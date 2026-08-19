@@ -12,7 +12,7 @@ def _json(tmp_path,name,value):
 
 def test_parser_exposes_all_operations_commands():
     parser=cli.build_parser(); choices=next(action for action in parser._actions if isinstance(action,__import__("argparse")._SubParsersAction)).choices
-    assert set(choices)=={"workspace-init","audit","backup-create","backup-verify","restore","operation-begin","operation-checkpoint","operation-complete","operation-fail","operation-inspect","operation-list","operation-resume-plan"}
+    assert set(choices)=={"workspace-init","audit","backup-create","backup-verify","restore","operation-begin","operation-checkpoint","operation-complete","operation-fail","operation-inspect","operation-list","operation-resume-plan","release-certify"}
 def test_workspace_init_outputs_json(tmp_path,capsys):
     root,payload=_init(tmp_path,capsys); assert payload["workspace_root"]==str(root)
 def test_audit_command_passes_clean_workspace(tmp_path,capsys):
@@ -51,3 +51,18 @@ def test_output_is_sorted_deterministic_json(tmp_path,capsys):
     root,_=_init(tmp_path,capsys); code,first=_run(["operation-list","--workspace-root",str(root)],capsys); code,second=_run(["operation-list","--workspace-root",str(root)],capsys); assert first.out==second.out; assert code==0
 def test_cli_does_not_expose_publish_or_provider_commands():
     parser=cli.build_parser(); choices=next(action for action in parser._actions if isinstance(action,__import__("argparse")._SubParsersAction)).choices; assert all("publish" not in name and "wordpress" not in name and "provider" not in name for name in choices)
+
+def test_release_certify_command_records_readiness(tmp_path,capsys):
+    root,workspace=_init(tmp_path,capsys)
+    inputs=_json(tmp_path,"release-inputs.json",{})
+    result=_json(tmp_path,"release-result.json",{"status":"PASS"})
+    base=["--workspace-root",str(root),"--operation-id","LK-OPERATION-RELEASE-CLI"]
+    assert _run(["operation-begin",*base,"--operation-type","INTEGRITY_AUDIT","--actor","Founder","--occurred-at-utc","2026-08-18T22:00:00Z","--inputs-json-file",str(inputs)],capsys)[0]==0
+    assert _run(["operation-complete",*base,"--occurred-at-utc","2026-08-18T22:01:00Z","--result-json-file",str(result)],capsys)[0]==0
+    assert _run(["backup-create","--workspace-root",str(root),"--backup-id","LK-BACKUP-RELEASE-CLI","--created-at-utc","2026-08-18T22:02:00Z"],capsys)[0]==0
+    backup=Path(workspace["paths"]["backups"])/"LK-BACKUP-RELEASE-CLI"
+    code,captured=_run(["release-certify","--workspace-root",str(root),"--backup-directory",str(backup),"--release-id","LK-RELEASE-CLI","--certified-by","Founder","--certified-at-utc","2026-08-18T22:03:00Z","--source-commit","a"*40,"--required-operation-id","LK-OPERATION-RELEASE-CLI"],capsys)
+    evidence=json.loads(captured.out)
+    assert code==0
+    assert evidence["status"]=="READY"
+    assert evidence["public_launch_authorized"] is False

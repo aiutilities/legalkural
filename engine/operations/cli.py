@@ -13,6 +13,7 @@ from .ledger import (
     list_operations, plan_operation_resume, record_operation_checkpoint,
 )
 from .restore import restore_production_backup
+from .release import certify_production_release
 from .workspace import initialize_production_workspace
 
 
@@ -81,6 +82,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     command = commands.add_parser("operation-list")
     _path(command, "--workspace-root")
+
+    command = commands.add_parser("release-certify")
+    _path(command, "--workspace-root")
+    _path(command, "--backup-directory")
+    command.add_argument("--release-id", required=True)
+    command.add_argument("--certified-by", required=True)
+    command.add_argument("--certified-at-utc", required=True)
+    command.add_argument("--source-commit", required=True)
+    command.add_argument(
+        "--required-operation-id",
+        action="append",
+        dest="required_operation_ids",
+        required=True,
+    )
     return parser
 
 
@@ -145,6 +160,16 @@ def _execute(args: argparse.Namespace) -> dict[str, Any]:
         return list_operations(args.workspace_root)
     if args.command == "operation-resume-plan":
         return plan_operation_resume(args.workspace_root, args.operation_id)
+    if args.command == "release-certify":
+        return certify_production_release(
+            workspace_root=args.workspace_root,
+            backup_directory=args.backup_directory,
+            release_id=args.release_id,
+            certified_by=args.certified_by,
+            certified_at_utc=args.certified_at_utc,
+            source_commit=args.source_commit,
+            required_operation_ids=args.required_operation_ids,
+        )
     raise ValueError(f"unsupported command: {args.command}")
 
 
