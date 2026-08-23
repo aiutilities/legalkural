@@ -80,3 +80,10 @@ is a visual/content reference for later Assembler block implementation.
 Founder approval for repository inclusion was recorded on 2026-08-19. A
 separate live-mutation approval, backup evidence and exact provider request plan
 remain required before any WordPress.com change.
+
+## Phase 7 B8 evidence closeout
+
+- `../PHASE_7_B8_LIVE_HYBRID_AND_TITLE_ONLY_ALIGNMENT_CLOSEOUT.md` records the
+  verified 11-mutation live structural state, protected post ID 10 lineage,
+  post-remediation `TITLE_ONLY` alignment and the still-pending manual Site
+  Editor visual boundary. It authorizes no live action or public launch.
