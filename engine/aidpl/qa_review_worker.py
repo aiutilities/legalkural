@@ -139,7 +139,6 @@ def deterministic_gate(
     )
 
     for phrase in [
-        "not an authentic",
         "not personalised legal advice",
         "Founder",
         "Publication status",
@@ -148,6 +147,21 @@ def deterministic_gate(
             blockers.append(
                 f"Article missing mandatory phrase: {phrase}"
             )
+
+    combined = article
+    for relative in ("output/09-kural/kural.md",):
+        path = case_root / relative
+        if path.exists():
+            combined += "\n" + path.read_text(encoding="utf-8")
+    for marker in (
+        "Kural-Inspired Insight",
+        "Kural-Inspired English",
+        "Kural-Inspired Tamil",
+    ):
+        if marker.lower() in combined.lower():
+            blockers.append(f"TITLE_ONLY policy violation: {marker}")
+    if any("\u0B80" <= char <= "\u0BFF" for char in combined):
+        blockers.append("TITLE_ONLY policy violation: Tamil text")
 
     return blockers
 
@@ -165,10 +179,10 @@ Rules:
 2. Check internal consistency across metadata, timeline, facts, issues, evidence, law, reasoning, decision, Kural brief and article.
 3. Detect invented facts, unsupported propositions, incorrect legal authorities, contradictions, missing limitations and distorted holdings.
 4. Distinguish legal fidelity defects from editorial preferences.
-5. Treat Tamil Kural wording as requiring human language review unless independently verified.
+5. Enforce TITLE_ONLY: Tamil and all Kural-inspired body content are prohibited.
 6. A PASS means the package is safe to move to Founder review, not automatic publication.
 7. Return FAIL only for material legal or structural defects.
-8. Return REVIEW_REQUIRED for unresolved legal, Tamil, traceability or factual concerns.
+8. Return FAIL for any Tamil or Kural-inspired body content; use REVIEW_REQUIRED for unresolved legal, traceability or factual concerns.
 9. Classify defects by their earliest true source. If an article exposes a missing, placeholder, incomplete, contradictory or unsupported upstream fact, issue, evidence item, authority, reasoning step or decision field, report the upstream source defect rather than describing it only as an editorial defect.
 10. Do not treat an editorial placeholder as proof that LK-EDITOR owns the defect. Identify the earliest artifact that lacks the verified substance needed to replace the placeholder.
 11. Reserve editorial findings for presentation, structure, wording or readability defects where the required verified substance already exists upstream.

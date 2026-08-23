@@ -237,8 +237,8 @@ must be verified before final wording.
 ### Disclaimer
 
 State that content is informational, not legal advice; source judgments govern;
-court/government affiliation is not implied; and original LegalKural lines are
-not authentic Thirukkural verses.
+court/government affiliation is not implied; and the Thirukkural-inspired
+algorithm is restricted to the English article title (`TITLE_ONLY`).
 
 ## Journal Visual Blueprint
 

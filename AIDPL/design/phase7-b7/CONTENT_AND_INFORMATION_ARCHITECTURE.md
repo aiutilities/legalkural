@@ -132,9 +132,8 @@ H1: `About LegalKural`
 > LegalKural is an AI-native legal knowledge and interpretation platform. It
 > turns judgments into structured, source-grounded and readable legal insight.
 
-> The name combines the precision of legal reasoning with the economy of the
-> Tamil idea of a kural: a short form that carries meaning. Original LegalKural
-> lines are editorial devices and are not authentic Thirukkural verses.
+> The name combines the precision of legal reasoning with the discipline of compressing verified legal meaning into a concise title.
+> The Thirukkural-inspired algorithm is restricted to the English article title.
 
 > LegalKural is independent. It is not affiliated with or endorsed by any
 > court, tribunal, government body or official reporter unless explicitly
@@ -179,8 +178,8 @@ H1: `Disclaimer`
 
 > LegalKural is not affiliated with or endorsed by any court, tribunal,
 > government body or official reporter unless expressly stated and evidenced.
-> Original LegalKural “Kural” lines are editorial devices, not authentic
-> Thirukkural verses.
+> The Thirukkural-inspired algorithm is restricted to the English article title;
+> it does not generate literary body content.
 
 > Summaries may omit facts, arguments, procedural history or later legal
 > developments. External links are provided for convenience and are not
@@ -191,8 +190,7 @@ H1: `Disclaimer`
 
 > This LegalKural explanation is for general information, not legal advice. The
 > source judgment and official record govern. Verify current law and obtain
-> professional advice for your circumstances. Any original LegalKural “Kural”
-> is an editorial line, not an authentic Thirukkural verse.
+> professional advice for your circumstances. The Thirukkural-inspired algorithm is restricted to the English article title.
 
 ## Global Footer Description
 

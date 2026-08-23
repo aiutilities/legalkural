@@ -256,8 +256,7 @@ The Disclaimer page and article-level notice must communicate clearly that:
 - users must independently verify current law, citations and case status;
 - LegalKural is not affiliated with or endorsed by any court, tribunal,
   government body or official reporter unless expressly stated and evidenced;
-- original “Kural” lines or couplets created by LegalKural are editorial devices
-  and are not authentic Thirukkural verses;
+- the Thirukkural-inspired algorithm is restricted to the English article title; no literary body content is generated;
 - external links are provided for convenience and are not endorsements;
 - availability, completeness and error-free operation are not guaranteed.
 
@@ -265,8 +264,7 @@ The Disclaimer page and article-level notice must communicate clearly that:
 
 > This LegalKural explanation is for general information, not legal advice.
 > The source judgment and official record govern. Verify current law and obtain
-> professional advice for your circumstances. Any original LegalKural “Kural”
-> is an editorial line, not an authentic Thirukkural verse.
+> professional advice for your circumstances. The Thirukkural-inspired algorithm is restricted to the English article title.
 
 The final live wording may be expanded after legal review but must not weaken
 these four points.

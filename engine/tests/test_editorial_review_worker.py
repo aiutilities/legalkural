@@ -15,7 +15,6 @@ def valid_article() -> str:
 
 Publication status: Draft.
 
-This is not an authentic Thirukkural verse.
 
 ## Case Snapshot
 
@@ -107,7 +106,7 @@ def test_normalize_article_structure() -> None:
     assert "## How the Judge Reasoned" in normalized
     assert "## The Decision" in normalized
     assert "## Editorial Disclaimer" in normalized
-    assert "not an authentic" in normalized.lower()
+    assert "not an authentic" not in normalized.lower()
     assert "not personalised legal advice" in normalized.lower()
 
 
@@ -188,3 +187,11 @@ def test_editor_prompt_requires_canonical_substantive_sections() -> None:
     assert "Do not emit placeholder text" in system_prompt
     assert "do not invent the missing substance" in system_prompt
     assert "downstream validator is intentionally fail-closed" in system_prompt
+
+
+def test_validate_article_rejects_kural_body_content() -> None:
+    article = valid_article().replace(
+        "## Case Snapshot",
+        "## Kural-Inspired English\n\nA simulated verse.\n\n## Case Snapshot",
+    )
+    assert any("TITLE_ONLY policy violation" in item for item in validate_article(article))

@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 from aidpl.editor_worker import run_editor
@@ -43,7 +44,6 @@ def test_run_editor(tmp_path: Path) -> None:
             "compressed_title": "Proof Must Lead",
             "legal_holding": "The claim succeeds on proof.",
             "universal_principle": "Proof must guide judgment.",
-            "kural_inspired_english": "Where proof leads, judgment follows."
         }
     }
 
@@ -61,7 +61,7 @@ def test_run_editor(tmp_path: Path) -> None:
     assert "not personalised legal advice" in article
 
 
-def test_build_article_propagates_structured_law_and_tamil_kural():
+def test_build_article_propagates_structured_law_and_enforces_title_only():
     from aidpl.editor_worker import build_article
 
     article = build_article(
@@ -120,8 +120,8 @@ def test_build_article_propagates_structured_law_and_tamil_kural():
             "compressed_title": "Use Over Label",
             "legal_holding": "Residential end-use governs.",
             "universal_principle": "Function prevails over label.",
-            "kural_inspired_english": "Use reveals the truth.",
-            "kural_inspired_tamil": "பயனே உண்மையை வெளிப்படுத்தும்.",
+            "thirukkural_algorithm_usage": "TITLE_ONLY",
+            "tamil_rendered": False,
         },
     )
 
@@ -137,5 +137,5 @@ def test_build_article_propagates_structured_law_and_tamil_kural():
     assert "Example v. State — 2026 SCC Test 1" in article
     assert "Applied the recipient-perspective test." in article
 
-    assert "Use reveals the truth." in article
-    assert "பயனே உண்மையை வெளிப்படுத்தும்." in article
+    assert "Kural-Inspired" not in article
+    assert not re.search(r"[\u0B80-\u0BFF]", article)

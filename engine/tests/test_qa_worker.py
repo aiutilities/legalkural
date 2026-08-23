@@ -29,7 +29,7 @@ def create_case(root: Path, review_required: bool) -> None:
             )
         elif relative.endswith("kural.md"):
             path.write_text(
-                "Not an authentic Thirukkural verse.\n",
+                "TITLE_ONLY: no literary body content.\n",
                 encoding="utf-8",
             )
         elif relative.endswith("article.md"):
@@ -158,7 +158,7 @@ def test_qa_ignores_superseded_stage_review_markers(
             for reason in report["review_reasons"]
         )
 
-def test_tamil_content_requires_review_when_human_gate_incomplete(tmp_path):
+def test_tamil_content_is_blocked_even_when_human_gate_incomplete(tmp_path):
     create_case(tmp_path, review_required=False)
 
     kural_path = tmp_path / "output/09-kural/kural.md"
@@ -183,14 +183,14 @@ def test_tamil_content_requires_review_when_human_gate_incomplete(tmp_path):
 
     report = run_qa("LK-TEST", tmp_path)
 
-    assert report["verdict"] == "REVIEW_REQUIRED"
+    assert report["verdict"] == "FAIL"
     assert (
-        "Tamil editorial content requires independent review."
-        in report["review_reasons"]
+        "TITLE_ONLY policy violation: Tamil text"
+        in report["blocking_errors"]
     )
 
 
-def test_tamil_content_does_not_require_review_when_human_gate_complete(
+def test_tamil_content_is_blocked_even_when_human_gate_complete(
     tmp_path,
 ):
     create_case(tmp_path, review_required=False)
@@ -217,7 +217,9 @@ def test_tamil_content_does_not_require_review_when_human_gate_complete(
 
     report = run_qa("LK-TEST", tmp_path)
 
+    assert report["verdict"] == "FAIL"
+
     assert (
-        "Tamil editorial content requires independent review."
-        not in report["review_reasons"]
+        "TITLE_ONLY policy violation: Tamil text"
+        in report["blocking_errors"]
     )

@@ -136,13 +136,6 @@ def build_article(
         "Verified facts, applicable law and fair procedure must guide judgment."
     )
 
-    tamil = kural.get("kural_inspired_tamil")
-    kural_tamil = (
-        f"> **{tamil}**"
-        if tamil
-        else "> **Tamil editorial rendering pending.**"
-    )
-
     return f"""# {title}
 
 **Reference Case:** {case_id}
@@ -158,15 +151,6 @@ def build_article(
 | Judge | {judge} |
 | Outcome | {outcome} |
 | Case ID | {case_id} |
-
-## Kural-Inspired Insight
-
-> **{kural.get('kural_inspired_english', 'Editorial insight pending.')}**
-
-{kural_tamil}
-
-This is original Legal Kural editorial writing. It is not an authentic
-Thirukkural verse.
 
 ## What Is the Case About?
 

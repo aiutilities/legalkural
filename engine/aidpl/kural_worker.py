@@ -233,18 +233,6 @@ def derive_principle(
     return principle
 
 
-def derive_english_kural(principle: str) -> str:
-    lowered = principle.lower()
-
-    if "functional use" in lowered:
-        return "Labels may name the form; use reveals the truth."
-
-    if "notice" in lowered or "opportunity" in lowered:
-        return "A burden imposed unheard is justice left unfinished."
-
-    return "Where proof leads, judgment must follow."
-
-
 def build_brief(
     case_id: str,
     facts: dict[str, Any],
@@ -281,8 +269,8 @@ def build_brief(
         "human_conflict": derive_human_conflict(facts, issues),
         "legal_holding": holding,
         "universal_principle": principle,
-        "kural_inspired_english": derive_english_kural(principle),
-        "kural_inspired_tamil": None,
+        "thirukkural_algorithm_usage": "TITLE_ONLY",
+        "tamil_rendered": False,
         "editorial_boundary": (
             "This draft separates the Court's legal holding from the "
             "editorial universal principle. It must not be published until "
@@ -315,9 +303,9 @@ def build_brief(
             },
         ],
         "quality_notes": [
-            "The English Kural-inspired line is an original machine draft.",
-            "No generated line is presented as authentic Thirukkural.",
-            "Tamil generation is intentionally disabled in deterministic mode.",
+            "The Thirukkural-inspired algorithm generated only the English title.",
+            "No couplet, verse, translation, epigraph or body text was generated.",
+            "Tamil generation and rendering are disabled.",
             "Human editorial review is mandatory before publication."
         ],
         "requires_human_editorial_review": True,
@@ -325,25 +313,11 @@ def build_brief(
 
 
 def render_markdown(brief: dict[str, Any]) -> str:
-    tamil = brief["kural_inspired_tamil"]
-
-    tamil_section = (
-        tamil
-        if tamil
-        else (
-            "_Tamil Kural-inspired writing is pending human or "
-            "model-assisted editorial review._"
-        )
-    )
-
     return f"""# {brief['compressed_title']}
 
 **Reference Case:** {brief['reference_case_id']}
 
 **Status:** Editorial Draft — Review Required
-
-> This is original Legal Kural editorial writing. It is not an authentic
-> Thirukkural verse.
 
 ## Human Conflict
 
@@ -357,13 +331,11 @@ def render_markdown(brief: dict[str, Any]) -> str:
 
 {brief['universal_principle']}
 
-## Kural-Inspired English
+## Title Policy
 
-> **{brief['kural_inspired_english']}**
-
-## Kural-Inspired Tamil
-
-{tamil_section}
+- Thirukkural algorithm usage: `TITLE_ONLY`
+- Tamil rendered: `false`
+- No couplet, verse, translation, epigraph or body text generated
 
 ## Editorial Boundary
 
@@ -372,10 +344,9 @@ def render_markdown(brief: dict[str, Any]) -> str:
 ## Validation
 
 - [x] Legal holding separated from editorial principle
-- [x] Original writing disclaimer included
 - [x] Source traceability preserved
+- [x] TITLE_ONLY boundary enforced
 - [ ] Legal fidelity review completed
-- [ ] Tamil editorial review completed
 - [ ] Founder approved
 """
 
@@ -432,7 +403,8 @@ def run_kural_generation(
             str(markdown_path),
         ],
         "schema_validation": "PASS",
-        "tamil_generation": "DEFERRED",
+        "tamil_rendered": False,
+        "thirukkural_algorithm_usage": "TITLE_ONLY",
         "human_editorial_review_required": True,
         "next_agent": "LK-EDITOR",
     }
@@ -496,7 +468,8 @@ def main() -> int:
         print("Brief         : CREATED")
         print("Markdown      : CREATED")
         print("Schema        : PASS")
-        print("Tamil         : DEFERRED")
+        print("Tamil         : DISABLED")
+        print("Algorithm     : TITLE_ONLY")
         print("Human Review  : REQUIRED")
         print("Next Agent    : LK-EDITOR")
         print("=" * 72)

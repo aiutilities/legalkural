@@ -74,8 +74,10 @@ def test_build_brief() -> None:
     assert brief["compressed_title"]
     assert brief["legal_holding"]
     assert brief["universal_principle"]
-    assert brief["kural_inspired_english"]
-    assert brief["kural_inspired_tamil"] is None
+    assert brief["thirukkural_algorithm_usage"] == "TITLE_ONLY"
+    assert brief["tamil_rendered"] is False
+    assert "kural_inspired_english" not in brief
+    assert "kural_inspired_tamil" not in brief
     assert brief["requires_human_editorial_review"] is True
 
 
@@ -91,8 +93,10 @@ def test_render_markdown() -> None:
     )
     markdown = render_markdown(brief)
 
-    assert "not an authentic" in markdown
-    assert "Human Review" not in markdown
+    assert "TITLE_ONLY" in markdown
+    assert "Tamil rendered: `false`" in markdown
+    assert "Kural-Inspired English" not in markdown
+    assert "Kural-Inspired Tamil" not in markdown
     assert "Founder approved" in markdown
 
 
@@ -124,7 +128,8 @@ def test_run_kural_generation(tmp_path: Path) -> None:
     )
 
     assert report["schema_validation"] == "PASS"
-    assert report["tamil_generation"] == "DEFERRED"
+    assert report["tamil_rendered"] is False
+    assert report["thirukkural_algorithm_usage"] == "TITLE_ONLY"
     assert (output / "09-kural/kural-brief.json").exists()
     assert (output / "09-kural/kural.md").exists()
 

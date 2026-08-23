@@ -153,10 +153,10 @@ def test_pass_artifact_findings_are_not_remediation_work() -> None:
     assert "metadata" not in findings[0]
 
 
-def test_human_review_classification() -> None:
+def test_tamil_kural_is_title_only_policy_violation() -> None:
     assert classify_finding(
         "Tamil couplet requires human language and cultural review."
-    ) == "HUMAN_REVIEW_REQUIRED"
+    ) == "EDITORIAL"
 
 
 def test_source_anomaly_classification() -> None:
@@ -177,7 +177,7 @@ def test_editorial_classification() -> None:
     ) == "EDITORIAL"
 
 
-def test_human_only_plan_has_no_autonomous_owner() -> None:
+def test_tamil_policy_violation_routes_to_kural_owner() -> None:
     report = {
         "verdict": "REVIEW_REQUIRED",
         "confidence": 0.8,
@@ -188,11 +188,11 @@ def test_human_only_plan_has_no_autonomous_owner() -> None:
 
     plan = build_remediation_plan("LK-TEST", report)
 
-    assert plan["earliest_owner"] is None
-    assert plan["owners"] == []
-    assert plan["work_items"] == []
-    assert len(plan["human_review_items"]) == 1
-    assert plan["requires_human_review"] is True
+    assert plan["earliest_owner"] == "LK-KURAL"
+    assert plan["owners"] == ["LK-KURAL"]
+    assert len(plan["work_items"]) == 1
+    assert plan["human_review_items"] == []
+    assert plan["requires_human_review"] is False
 
 
 def test_mixed_plan_separates_human_and_autonomous_items() -> None:
@@ -207,9 +207,9 @@ def test_mixed_plan_separates_human_and_autonomous_items() -> None:
 
     plan = build_remediation_plan("LK-TEST", report)
 
-    assert plan["earliest_owner"] == "LK-EDITOR"
-    assert len(plan["work_items"]) == 1
-    assert len(plan["human_review_items"]) == 1
+    assert plan["earliest_owner"] == "LK-KURAL"
+    assert len(plan["work_items"]) == 2
+    assert plan["human_review_items"] == []
 
 
 def test_constitutional_article_is_not_editorial() -> None:
@@ -245,13 +245,13 @@ def test_editorial_placeholder_routes_to_editor() -> None:
     assert owner == "LK-EDITOR"
 
 
-def test_human_tamil_route_has_no_autonomous_owner() -> None:
+def test_tamil_policy_route_has_kural_owner() -> None:
     classification, owner = route_finding(
         "Tamil couplet requires human language and cultural review."
     )
 
-    assert classification == "HUMAN_REVIEW_REQUIRED"
-    assert owner is None
+    assert classification == "EDITORIAL"
+    assert owner == "LK-KURAL"
 
 
 def test_source_anomaly_uses_upstream_owner_when_known() -> None:
@@ -517,6 +517,11 @@ def test_remediation_runtime_builds_plan_with_case_root(
         "build_remediation_plan",
         capturing_build_plan,
     )
+    monkeypatch.setattr(
+        runtime,
+        "run_command",
+        lambda root, args: None,
+    )
 
     from aidpl.orchestrator import build_plan, save_plan
 
@@ -543,13 +548,16 @@ def test_remediation_runtime_builds_plan_with_case_root(
     iteration = result["iterations"][0]
     plan = iteration["plan"]
 
-    # Electricity verification is source-confirmed and suppressed.
-    assert plan["work_items"] == []
+    # Electricity verification is source-confirmed and suppressed; the only
+    # autonomous item is the fail-closed TITLE_ONLY policy defect.
+    assert len(plan["work_items"]) == 1
 
-    # Human-only gate remains fail-closed.
-    assert len(plan["human_review_items"]) == 1
-    assert plan["earliest_owner"] is None
-    assert plan["requires_human_review"] is True
+    # Legacy body content is a fail-closed TITLE_ONLY policy defect.
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["owner"] == "LK-KURAL"
+    assert plan["human_review_items"] == []
+    assert plan["earliest_owner"] == "LK-KURAL"
+    assert plan["requires_human_review"] is False
 
 
 def test_decompose_finding_splits_explicit_lettered_concerns() -> None:
@@ -844,7 +852,7 @@ def test_source_confirmed_electricity_stays_suppressed_after_dedup(
     )
 
 
-def test_duplicate_human_findings_remain_human_only() -> None:
+def test_duplicate_tamil_findings_remain_one_policy_defect() -> None:
     from aidpl.remediation_runtime import build_remediation_plan
 
     report = {
@@ -869,9 +877,10 @@ def test_duplicate_human_findings_remain_human_only() -> None:
 
     plan = build_remediation_plan("LK-TEST", report)
 
-    assert plan["work_items"] == []
-    assert plan["requires_human_review"] is True
-    assert len(plan["human_review_items"]) >= 1
+    assert len(plan["work_items"]) == 1
+    assert plan["work_items"][0]["owner"] == "LK-KURAL"
+    assert plan["requires_human_review"] is False
+    assert plan["human_review_items"] == []
 
     assert all(
         item["owner"] is None
@@ -920,8 +929,8 @@ def test_remediation_ids_are_contiguous_after_deduplication() -> None:
         for number in range(1, len(ids) + 1)
     ]
 
-    assert len(plan["work_items"]) == 2
-    assert len(plan["human_review_items"]) == 1
+    assert len(plan["work_items"]) == 3
+    assert plan["human_review_items"] == []
 
 
 
@@ -1685,7 +1694,7 @@ def test_b9_r3_obiter_findings_share_fingerprint():
     )
 
 
-def test_b9_r3_tamil_review_findings_share_fingerprint():
+def test_b9_r3_tamil_policy_findings_share_fingerprint():
     first = (
         "Tamil Kural-inspired couplet: Requires mandatory human "
         "Tamil language and cultural review before publication."
@@ -1698,12 +1707,12 @@ def test_b9_r3_tamil_review_findings_share_fingerprint():
 
     assert remediation_fingerprint(
         first,
-        "HUMAN_REVIEW_REQUIRED",
-        None,
+        "EDITORIAL",
+        "LK-KURAL",
     ) == remediation_fingerprint(
         second,
-        "HUMAN_REVIEW_REQUIRED",
-        None,
+        "EDITORIAL",
+        "LK-KURAL",
     )
 
 

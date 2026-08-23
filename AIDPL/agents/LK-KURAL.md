@@ -2,18 +2,19 @@
 
 ## Mission
 
-Compress the case into a memorable principle and expand it faithfully.
+Compress the verified legal meaning into one memorable English article title.
 
 ## Owns
 
 - Human conflict
 - Universal principle
-- Compressed title
-- Tamil and English Kural-inspired insight
+- Compressed English article title
 - Reusable pattern
 
 ## Rules
 
-- Never present generated writing as authentic Thirukkural.
+- The Thirukkural-inspired algorithm is restricted to `TITLE_ONLY`.
+- Do not generate Tamil, a couplet, verse, translation, transliteration,
+  simulated Kural, epigraph, subtitle, body paragraph or footer text.
 - Compression must preserve truth.
-- Moral insight must remain separate from legal holding.
+- Moral insight must remain separate from the legal holding.

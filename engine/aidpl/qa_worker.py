@@ -168,26 +168,20 @@ def run_qa(case_id: str, case_root: Path) -> dict[str, Any]:
             )
 
 
-    if re.search(
-        r"^\s*##?\s+Kural-Inspired Tamil\s*$",
-        kural,
-        re.MULTILINE,
+    combined = article + "\n" + kural
+    for marker in (
+        "Kural-Inspired Insight",
+        "Kural-Inspired English",
+        "Kural-Inspired Tamil",
     ):
-        tamil_review_completed = (
-            "- [x] Tamil language review completed"
-            in kural
-            or "- [X] Tamil language review completed"
-            in kural
-        )
-
-        if (
-            "pending" not in kural.lower()
-            and "deferred" not in kural.lower()
-            and not tamil_review_completed
-        ):
-            review_reasons.append(
-                "Tamil editorial content requires independent review."
+        if marker.lower() in combined.lower():
+            blocking_errors.append(
+                f"TITLE_ONLY policy violation: {marker}"
             )
+    if re.search(r"[\u0B80-\u0BFF]", combined):
+        blocking_errors.append(
+            "TITLE_ONLY policy violation: Tamil text"
+        )
 
     if blocking_errors:
         verdict = "FAIL"

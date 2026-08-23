@@ -179,28 +179,13 @@ def normalize_kural_contract(
             or payload.get("principle")
             or ""
         ),
-        "kural_inspired_english": str(
-            payload.get("kural_inspired_english")
-            or payload.get("english_kural")
-            or ""
-        ),
-        "kural_inspired_tamil": (
-            str(
-                payload.get("kural_inspired_tamil")
-                or payload.get("tamil_kural")
-            )
-            if (
-                payload.get("kural_inspired_tamil")
-                or payload.get("tamil_kural")
-            )
-            else None
-        ),
+        "thirukkural_algorithm_usage": "TITLE_ONLY",
+        "tamil_rendered": False,
         "editorial_boundary": str(
             payload.get("editorial_boundary")
             or (
-                "This is original Legal Kural editorial writing. "
-                "It is not an authentic Thirukkural verse and must "
-                "not be represented as one."
+                "The Thirukkural-inspired algorithm is restricted to "
+                "the English article title. It must not generate body text."
             )
         ),
         "source_traceability": (
@@ -232,10 +217,10 @@ def normalize_kural_contract(
 
     normalized["quality_notes"].extend(
         [
-            "OpenAI Kural review normalized through AIDPL.",
-            "Tamil and English lines are original editorial writing.",
-            "Neither line may be represented as authentic Thirukkural.",
-            "Human Tamil and legal-fidelity review remain mandatory.",
+            "OpenAI title review normalized through AIDPL.",
+            "Only the English article title may use the algorithm.",
+            "Tamil and all Kural-inspired body content are prohibited.",
+            "Human legal-fidelity review remains mandatory.",
         ]
     )
 
@@ -245,17 +230,9 @@ def normalize_kural_contract(
 def render_fallback_markdown(
     kural: dict[str, Any],
 ) -> str:
-    tamil = (
-        kural["kural_inspired_tamil"]
-        or "_Tamil editorial line requires human review._"
-    )
-
     return f"""# {kural['compressed_title']}
 
 **Reference Case:** {kural['reference_case_id']}
-
-> This is original Legal Kural editorial writing. It is not an authentic
-> Thirukkural verse.
 
 ## Human Conflict
 
@@ -269,13 +246,11 @@ def render_fallback_markdown(
 
 {kural['universal_principle']}
 
-## Kural-Inspired English
+## Title Policy
 
-> **{kural['kural_inspired_english']}**
-
-## Kural-Inspired Tamil
-
-> **{tamil}**
+- Thirukkural algorithm usage: `TITLE_ONLY`
+- Tamil rendered: `false`
+- No couplet, verse, translation, epigraph or body text generated
 
 ## Editorial Boundary
 
@@ -283,9 +258,8 @@ def render_fallback_markdown(
 
 ## Review Gate
 
-- [x] OpenAI Kural review completed
+- [x] TITLE_ONLY boundary enforced
 - [ ] Legal fidelity review completed
-- [ ] Tamil language review completed
 - [ ] Founder approval recorded
 """
 
@@ -303,7 +277,7 @@ def mock_review(
 
     return {
         "kural": reviewed,
-        "markdown": markdown,
+        "markdown": render_fallback_markdown(reviewed),
         "review_summary": {
             "status": "MODEL_REVIEWED_MOCK",
             "changes_made": ["Updated review status only."],
@@ -322,22 +296,23 @@ def build_prompt(
     decision: dict[str, Any],
     current: dict[str, Any],
 ) -> tuple[str, str]:
-    system_prompt = """You are the Legal Kural Kural Reasoning Review Agent.
+    system_prompt = """You are the LegalKural Title Review Agent.
 
-Transform the verified legal reasoning into concise, humane editorial insight.
+Review the source-grounded legal compression and return one concise English
+article title.
 
 Rules:
 1. Preserve the Court's legal holding exactly in substance.
 2. Clearly separate the legal holding from the universal principle.
-3. Create one compressed title.
-4. Create one original English Kural-inspired line.
-5. Create one original Tamil Kural-inspired couplet only when confident.
-6. Never present generated writing as authentic Thirukkural.
-7. Avoid invented facts, moral overreach and legal advice.
-8. Preserve factual limits and source traceability.
-9. Human Tamil and legal review remain mandatory.
-10. Return the reviewed object as JSON in kural_json and the full
-    publication-ready draft section in kural_markdown.
+3. Create or improve exactly one compressed English article title.
+4. The Thirukkural-inspired algorithm is TITLE_ONLY.
+5. Do not create Tamil text, a couplet, verse, translation, transliteration,
+   simulated Kural, epigraph, subtitle, body paragraph or footer text.
+6. Avoid invented facts, moral overreach and legal advice.
+7. Preserve factual limits and source traceability.
+8. Human legal-fidelity review remains mandatory.
+9. Return the reviewed object as JSON in kural_json. kural_markdown must contain
+   only the title-review artifact and policy metadata, never literary content.
 """
 
     user_prompt = json.dumps(
@@ -461,13 +436,9 @@ def run_review(
             reviewed["kural"],
         )
 
-        if (
-            "not an authentic" not in
-            reviewed["markdown"].lower()
-        ):
-            reviewed["markdown"] = render_fallback_markdown(
-                reviewed["kural"]
-            )
+        reviewed["markdown"] = render_fallback_markdown(
+            reviewed["kural"]
+        )
 
         provider_metadata = {
             "provider": response.provider,
@@ -522,7 +493,8 @@ def run_review(
         ],
         "backup_root": str(backup_root),
         "live_inference": provider_name != "mock",
-        "human_tamil_review_required": True,
+        "tamil_rendered": False,
+        "thirukkural_algorithm_usage": "TITLE_ONLY",
         "next_action": "RERUN_FROM_LK_EDITOR",
     }
 
@@ -572,7 +544,8 @@ def main() -> int:
         print(f"Model       : {report['provider']['model']}")
         print(f"Status      : {report['status']}")
         print("Artifacts   : 2 VALIDATED")
-        print("Tamil Gate  : HUMAN REVIEW REQUIRED")
+        print("Tamil        : DISABLED")
+        print("Algorithm    : TITLE_ONLY")
         print("Next Action : RERUN_FROM_LK_EDITOR")
         print("=" * 76)
         return 0

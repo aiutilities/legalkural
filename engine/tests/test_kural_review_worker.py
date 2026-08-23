@@ -31,8 +31,8 @@ def create_case(root: Path) -> None:
             "human_conflict": "A conflict.",
             "legal_holding": "A holding.",
             "universal_principle": "A principle.",
-            "kural_inspired_english": "Use reveals truth.",
-            "kural_inspired_tamil": None,
+            "thirukkural_algorithm_usage": "TITLE_ONLY",
+            "tamil_rendered": False,
             "editorial_boundary": "Not authentic Thirukkural.",
             "source_traceability": [],
             "quality_notes": [],
@@ -74,8 +74,6 @@ def test_normalize_kural_contract() -> None:
             "conflict": "A conflict.",
             "holding": "A holding.",
             "principle": "A principle.",
-            "english_kural": "Proof governs judgment.",
-            "tamil_kural": "சான்றே வழி.",
         },
     )
 
@@ -83,6 +81,10 @@ def test_normalize_kural_contract() -> None:
     assert normalized["reference_case_id"] == "LK-TEST"
     assert normalized["compressed_title"] == "Proof Before Label"
     assert normalized["requires_human_editorial_review"] is True
+    assert normalized["thirukkural_algorithm_usage"] == "TITLE_ONLY"
+    assert normalized["tamil_rendered"] is False
+    assert "kural_inspired_english" not in normalized
+    assert "kural_inspired_tamil" not in normalized
 
 
 def test_mock_review(tmp_path: Path) -> None:
@@ -167,10 +169,6 @@ def test_normalize_kural_contract_accepts_structured_legal_holding() -> None:
             "universal_principle": (
                 "Classification should follow proven functional use."
             ),
-            "kural_inspired_english": (
-                "Use reveals what labels conceal."
-            ),
-            "kural_inspired_tamil": None,
             "source_traceability": [],
         },
     )

@@ -155,6 +155,12 @@ def classify_finding(finding: str) -> str:
     """Classify a QA finding for remediation routing."""
     lowered = finding.lower()
 
+    if "tamil" in lowered and any(
+        marker in lowered
+        for marker in ("kural", "couplet", "verse", "line")
+    ):
+        return "EDITORIAL"
+
     human_markers = (
         "human review",
         "human language",
@@ -348,6 +354,13 @@ def is_actionable_finding(finding: str) -> bool:
 def route_finding(finding: str) -> tuple[str, str | None]:
     """Classify a finding and choose its earliest true remediation owner."""
     classification = classify_finding(finding)
+
+    lowered = finding.lower()
+    if "tamil" in lowered and any(
+        marker in lowered
+        for marker in ("kural", "couplet", "verse", "line")
+    ):
+        return "EDITORIAL", "LK-KURAL"
 
     if classification == "HUMAN_REVIEW_REQUIRED":
         return classification, None
@@ -1183,22 +1196,16 @@ def remediation_fingerprint(
             "equality-discrimination-obiter-scope",
         )
 
-    # Tamil review can be reported globally, against kural_brief,
-    # and against article_markdown. It is one mandatory human gate.
-    if (
-        "tamil" in normalized
-        and (
-            "human review" in normalized
-            or "human language" in normalized
-            or "language/cultural review" in normalized
-            or "language and cultural review" in normalized
-            or "requires human" in normalized
-        )
+    # Legacy Tamil/Kural body findings are one TITLE_ONLY policy defect.
+    # They route back to the title stage and cannot be waived by language review.
+    if "tamil" in normalized and any(
+        marker in normalized
+        for marker in ("kural", "couplet", "verse", "line")
     ):
         return (
-            "HUMAN_REVIEW_REQUIRED",
-            None,
-            "tamil-kural-human-review",
+            "EDITORIAL",
+            "LK-KURAL",
+            "title-only-policy-violation",
         )
 
     # Workflow/status alignment is one Reason-stage concern even when QA

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -143,12 +144,6 @@ def normalize_article_structure(
             + ("\n" + parts[1] if len(parts) > 1 else "")
         )
 
-    if "not an authentic" not in normalized.lower():
-        normalized += (
-            "\n\n> This Kural-inspired writing is original Legal Kural "
-            "editorial work. It is not an authentic Thirukkural verse.\n"
-        )
-
     if "## Editorial Disclaimer" not in normalized:
         normalized += (
             "\n\n## Editorial Disclaimer\n\n"
@@ -169,7 +164,6 @@ def validate_article(article: str) -> list[str]:
 
     required_phrases = [
         "Publication status",
-        "not an authentic",
         "not personalised legal advice",
         "Founder",
     ]
@@ -194,6 +188,17 @@ def validate_article(article: str) -> list[str]:
             blockers.append(
                 f"Required section missing: {section}"
             )
+
+    prohibited = (
+        "Kural-Inspired Insight",
+        "Kural-Inspired English",
+        "Kural-Inspired Tamil",
+    )
+    for marker in prohibited:
+        if marker.lower() in article.lower():
+            blockers.append(f"TITLE_ONLY policy violation: {marker}")
+    if re.search(r"[\u0B80-\u0BFF]", article):
+        blockers.append("TITLE_ONLY policy violation: Tamil text")
 
     if len(article.split()) < 600:
         blockers.append(
@@ -227,8 +232,8 @@ Rules:
 4. Separate party submissions from judicial findings.
 5. Explain legal terms in plain language without distorting them.
 6. Write for citizens, law students and lawyers in one coherent article.
-7. Preserve the Kural-inspired title and insight, but state clearly that it is original editorial writing and not authentic Thirukkural.
-8. Preserve publication, legal-advice and Founder-approval disclaimers.
+7. Preserve the source-grounded English title. The Thirukkural-inspired algorithm is TITLE_ONLY.
+8. Do not create Tamil text, a couplet, verse, translation, transliteration, epigraph, subtitle, body paragraph or footer text. Preserve publication, legal-advice and Founder-approval disclaimers.
 9. The reviewed article MUST contain these exact Markdown section headings:
    ## Case Snapshot
    ## What Is the Case About?
