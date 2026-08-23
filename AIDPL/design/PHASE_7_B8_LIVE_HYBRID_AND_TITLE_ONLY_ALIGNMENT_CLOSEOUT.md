@@ -99,3 +99,11 @@ launch gate.
 5. Separate B11 Founder approval for Coming Soon removal and public launch.
 
 This closeout records evidence only. It grants none of the later approvals.
+
+## Approved manual visual boundary
+
+The exact remaining manual visual boundary is documented in
+`PHASE_7_B8_MANUAL_SITE_EDITOR_VISUAL_EXECUTION_BOUNDARY.md`. Its approval does
+not itself record live execution. WordPress.com Site Editor access, mutation,
+evidence capture and completion remain subject to the explicit execution gate
+and all stop conditions in that document.
