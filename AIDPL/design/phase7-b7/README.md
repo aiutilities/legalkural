@@ -96,3 +96,12 @@ remain required before any WordPress.com change.
   launch-deferred checks.
 - It authorizes no WordPress mutation, Coming Soon removal, indexing change or
   public launch.
+
+## Phase 7 B9 read-only validation evidence closeout
+
+- Evidence: `../PHASE_7_B9_READ_ONLY_VALIDATION_EVIDENCE_CLOSEOUT.md`
+- Status: `COMPLETED_WITH_BLOCKING_TITLE_ONLY_DEFECT`
+- Anonymous desktop and Vivo V27 Coming Soon protection: `PASS`
+- Published post 10 TITLE_ONLY compliance: `FAIL`
+- WordPress mutations: `0`
+- Public launch authorized: `NO`
