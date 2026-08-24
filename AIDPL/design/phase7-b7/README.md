@@ -87,3 +87,12 @@ remain required before any WordPress.com change.
   verified 11-mutation live structural state, protected post ID 10 lineage,
   post-remediation `TITLE_ONLY` alignment and the still-pending manual Site
   Editor visual boundary. It authorizes no live action or public launch.
+
+## Phase 7 B9 read-only validation boundary
+
+- `../PHASE_7_B9_READ_ONLY_VALIDATION_BOUNDARY.md` records the Founder-approved
+  read-only scope for authenticated preview inspection, anonymous Coming Soon
+  verification, accessibility/SEO/privacy/disclaimer evidence and explicit
+  launch-deferred checks.
+- It authorizes no WordPress mutation, Coming Soon removal, indexing change or
+  public launch.
