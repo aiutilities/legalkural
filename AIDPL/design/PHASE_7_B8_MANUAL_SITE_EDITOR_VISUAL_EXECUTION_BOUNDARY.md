@@ -174,3 +174,16 @@ values, rollback readiness, protected post verification and a zero-launch-state
 check are reviewed. Repository evidence and any commit require separate exact
 boundary approval. B11 remains the sole gate for Coming Soon removal and public
 launch.
+
+## Manual visual execution result — 2026-08-24
+
+- Authorization checkpoint: `4a69056`.
+- Execution mode: Founder-operated WordPress.com Site Editor in Safari, with guided visual verification.
+- Result: `EXECUTED_NO_MUTATION_BLOCKED_BY_PLAN_LIMITATIONS`.
+- Active theme typography exposed Inter and a limited bundled font list; Georgia was unavailable. No substitute font was selected.
+- Exact custom heading and link HEX controls were inspectable, but applying custom HEX values invoked the WordPress.com premium-styles gate.
+- Exact content-width and wide-width controls were inspectable, but applying `720px` and `1200px` invoked the WordPress.com premium-styles gate.
+- All staged custom-style changes were abandoned without saving. No upgrade, premium-style removal, or public launch action was taken.
+- Certified post ID 10, pages, templates, template parts, navigation, patterns, identity, media, Coming Soon, indexing and launch status were not modified.
+- `tamil_rendered` remains `false`; `thirukkural_algorithm_usage` remains `TITLE_ONLY`.
+- Further live visual mutation requires a separately approved boundary and, where applicable, an explicit commercial-plan decision.
