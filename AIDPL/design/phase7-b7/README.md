@@ -105,3 +105,12 @@ remain required before any WordPress.com change.
 - Published post 10 TITLE_ONLY compliance: `FAIL`
 - WordPress mutations: `0`
 - Public launch authorized: `NO`
+
+## Phase 7 B10 post-10 TITLE_ONLY remediation boundary
+
+- Boundary: `../PHASE_7_B10_POST10_TITLE_ONLY_REMEDIATION_BOUNDARY.md`
+- Target: WordPress post ID `10` only
+- Permitted update: remove the prohibited opening literary block only
+- Required contract: `tamil_rendered = false`, `thirukkural_algorithm_usage = TITLE_ONLY`
+- Provider requests: `0`
+- Public launch authorized: `NO`
