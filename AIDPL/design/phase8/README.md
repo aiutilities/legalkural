@@ -23,3 +23,11 @@ Phase 8 governs launch readiness, explicit launch authorization, controlled laun
 ## Phase 7 inheritance
 
 Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` with `558 passed`. Phase 8 does not weaken the Phase 7 `TITLE_ONLY`, source-grounding, evidence or safety invariants.
+
+## B1 public-launch readiness discovery evidence closeout
+
+- Status: `CLOSED — CONDITIONALLY_READY`
+- Evidence: `../PHASE_8_B1_PUBLIC_LAUNCH_READINESS_DISCOVERY_EVIDENCE_CLOSEOUT.md`
+- Regression: `558 passed`
+- WordPress requests: `7 GET-only`; mutations: `0`
+- Public launch authorized: `NO`
