@@ -54,3 +54,10 @@ Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` 
 - Approved checkpoint: `02e1178fe70f6d998e678b18dbd8ad53bd171d6b`
 - Scope: repository-only evidence-closeout definition; no WordPress request or mutation
 - Public launch authorized: **NO**
+
+## Phase 8 B2 live read-only public-launch preflight evidence closeout
+
+- [Evidence closeout](../PHASE_8_B2_LIVE_READ_ONLY_PUBLIC_LAUNCH_PREFLIGHT_EVIDENCE_CLOSEOUT.md)
+- Status: **READY FOR A SEPARATE PUBLIC-LAUNCH AUTHORIZATION DECISION**.
+- Public launch authorized: **NO**.
+- WordPress mutations: **0**.
