@@ -39,3 +39,11 @@ Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` 
 - Starting checkpoint: `8b13c3f`
 - WordPress requests and mutations authorized: `0`
 - Public launch authorized: `NO`
+
+## B2 compiled public-launch preflight and rollback plan
+
+- Status: `DRAFT COMPLETE — FOUNDER REVIEW REQUIRED`
+- Plan: `../PHASE_8_B2_PUBLIC_LAUNCH_PREFLIGHT_AND_ROLLBACK_PLAN.md`
+- Single proposed launch mutation: WordPress.com `Launch site`
+- Indexing change included: `NO`
+- Public launch authorized: `NO`
