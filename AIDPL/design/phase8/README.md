@@ -31,3 +31,11 @@ Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` 
 - Regression: `558 passed`
 - WordPress requests: `7 GET-only`; mutations: `0`
 - Public launch authorized: `NO`
+
+## B2 public-launch preflight and rollback planning
+
+- Status: `APPROVED — PLANNING ONLY`
+- Boundary: `../PHASE_8_B2_PUBLIC_LAUNCH_PREFLIGHT_AND_ROLLBACK_PLANNING_BOUNDARY.md`
+- Starting checkpoint: `8b13c3f`
+- WordPress requests and mutations authorized: `0`
+- Public launch authorized: `NO`
