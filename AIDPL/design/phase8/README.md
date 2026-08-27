@@ -78,3 +78,12 @@ Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` 
 - Search indexing: **DISCOURAGED**
 - Final machine verification: **13 GET requests, 0 mutations, 558 tests passed**
 - This repository closeout makes no WordPress.com request or mutation.
+
+## Phase 8 B4 post-launch stabilization and monitoring boundary
+
+- Boundary: [PHASE_8_B4_POST_LAUNCH_STABILIZATION_AND_MONITORING_BOUNDARY.md](../PHASE_8_B4_POST_LAUNCH_STABILIZATION_AND_MONITORING_BOUNDARY.md)
+- Status: **DEFINED — MONITORING NOT YET AUTHORIZED**
+- Windows: **T+24 hours, T+72 hours, T+7 days**
+- Monitoring method: **GET-only, fail-closed**
+- Remediation and rollback: **NOT AUTHORIZED**
+- This boundary implementation makes no WordPress.com request or mutation.
