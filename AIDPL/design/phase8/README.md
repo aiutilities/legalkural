@@ -69,3 +69,12 @@ Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` 
 - Public launch authorized: **NO**
 - Public launch performed: **NO**
 - This boundary permits no WordPress.com request or mutation.
+
+## Phase 8 B3 controlled public-launch evidence closeout
+
+- Evidence: [PHASE_8_B3_CONTROLLED_PUBLIC_LAUNCH_EVIDENCE_CLOSEOUT.md](../PHASE_8_B3_CONTROLLED_PUBLIC_LAUNCH_EVIDENCE_CLOSEOUT.md)
+- Status: **VERIFIED — EVIDENCE CLOSED — COMMIT PENDING**
+- Public launch: **VERIFIED**
+- Search indexing: **DISCOURAGED**
+- Final machine verification: **13 GET requests, 0 mutations, 558 tests passed**
+- This repository closeout makes no WordPress.com request or mutation.
