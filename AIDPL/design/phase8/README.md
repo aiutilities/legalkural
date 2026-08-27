@@ -61,3 +61,11 @@ Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` 
 - Status: **READY FOR A SEPARATE PUBLIC-LAUNCH AUTHORIZATION DECISION**.
 - Public launch authorized: **NO**.
 - WordPress mutations: **0**.
+
+## Phase 8 B3 controlled public-launch authorization boundary
+
+- Boundary: [PHASE_8_B3_CONTROLLED_PUBLIC_LAUNCH_AUTHORIZATION_BOUNDARY.md](../PHASE_8_B3_CONTROLLED_PUBLIC_LAUNCH_AUTHORIZATION_BOUNDARY.md)
+- Status: **DEFINED — NOT AUTHORIZED**
+- Public launch authorized: **NO**
+- Public launch performed: **NO**
+- This boundary permits no WordPress.com request or mutation.
