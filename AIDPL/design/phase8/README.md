@@ -97,3 +97,13 @@ Phase 7 is complete and certified at `a083fabb3df72ac8f7d5d02e7d0fa803202ff560` 
 - Regression before and after monitoring: **558 passed**
 - T+72 and T+7 monitoring remain separately bounded.
 - This repository closeout makes no WordPress.com request or mutation.
+
+## Phase 8 B4 T+72 stabilization monitoring evidence closeout
+
+- Evidence: [PHASE_8_B4_T72_STABILIZATION_MONITORING_EVIDENCE_CLOSEOUT.md](../PHASE_8_B4_T72_STABILIZATION_MONITORING_EVIDENCE_CLOSEOUT.md)
+- Status: **VERIFIED — T+72 EVIDENCE CLOSED — COMMIT PENDING**
+- Machine monitoring: **13 GET requests, 0 mutations**
+- Anonymous desktop and physical-mobile evidence: **PASS**
+- Regression before and after monitoring: **558 passed**
+- T+7 monitoring remains separately bounded.
+- This repository closeout makes no WordPress.com request or mutation.
